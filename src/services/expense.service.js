@@ -11,7 +11,17 @@ export const listExpenses = async (user, { project } = {}) => {
   if (project) q.project = new mongoose.Types.ObjectId(project);
   // For simplicity: Admin/PM see all; others see own submissions
   if (!(user.role === 'Admin' || user.role === 'Project Manager')) q.submittedBy = user.id;
-  return Expense.find(q).populate('project', 'name').populate('submittedBy', 'name email').sort({ createdAt: -1 }).lean();
+  const rows = await Expense.find(q)
+    .populate('project', 'name')
+    .populate('submittedBy', 'name email')
+    .sort({ createdAt: -1 })
+    .lean();
+  // Provide frontend-friendly aliases: expenseName (description) and date (createdAt)
+  return rows.map(r => ({
+    ...r,
+    expenseName: r.description,
+    date: r.createdAt,
+  }));
 };
 
 export const setStatus = async (id, status) => {
@@ -46,9 +56,9 @@ export const dashboardKPIs = async (user) => {
   const reimbursed = reimbursedAgg[0]?.total || 0;
   return {
     totalExpenses: total,
-    approvedPct: total ? approved / total : 0,
-    billablePct: total ? billable / total : 0,
-    reimbursedPct: total ? reimbursed / total : 0,
+    approvedPercent: total ? approved / total : 0,
+    billablePercent: total ? billable / total : 0,
+    reimbursedPercent: total ? reimbursed / total : 0,
   };
 };
 
@@ -58,6 +68,9 @@ export const expensesByProject = async (user) => {
   const rows = await Expense.aggregate([
     { $match: q },
     { $group: { _id: '$project', amount: { $sum: '$amount' } } },
+    { $lookup: { from: 'projects', localField: '_id', foreignField: '_id', as: 'project' } },
+    { $unwind: { path: '$project', preserveNullAndEmptyArrays: true } },
+    { $project: { _id: 0, projectId: '$_id', projectName: '$project.name', amount: 1 } },
     { $sort: { amount: -1 } },
   ]);
   return rows;
