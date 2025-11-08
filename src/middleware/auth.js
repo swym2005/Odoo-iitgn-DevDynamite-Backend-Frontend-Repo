@@ -26,3 +26,12 @@ export const requireAdmin = (req, res, next) => {
   }
   next();
 };
+
+export const requirePMOrAdmin = (req, res, next) => {
+  if (!req.user || (req.user.role !== 'Admin' && req.user.role !== 'Project Manager')) {
+    const e = new Error('Forbidden');
+    e.status = 403;
+    return next(e);
+  }
+  next();
+};

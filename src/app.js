@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import { connectDB } from './config/db.js';
 import authRoutes from './routes/auth.routes.js';
 import adminRoutes from './routes/admin.routes.js';
+import pmRoutes from './routes/pm.routes.js';
 import { notFound, errorHandler } from './middleware/error.js';
 
 dotenv.config();
@@ -14,6 +15,7 @@ app.use(express.json());
 
 app.use('/auth', authRoutes);
 app.use('/admin', adminRoutes);
+app.use('/pm', pmRoutes);
 
 app.get('/', (req, res) => {
   res.json({ status: 'ok', service: 'FlowIQ Auth API' });
