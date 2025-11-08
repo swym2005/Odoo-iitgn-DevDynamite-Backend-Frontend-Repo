@@ -11,6 +11,7 @@ import expenseRoutes from './routes/expense.routes.js';
 import financeRoutes from './routes/finance.routes.js';
 import analyticsRoutes from './routes/analytics.routes.js';
 import aiRoutes from './routes/ai.routes.js';
+import profileRoutes from './routes/profile.routes.js';
 import { notFound, errorHandler } from './middleware/error.js';
 
 dotenv.config();
@@ -29,6 +30,7 @@ app.use('/expenses', expenseRoutes);
 app.use('/finance', financeRoutes);
 app.use('/analytics', analyticsRoutes);
 app.use('/ai', aiRoutes);
+app.use('/profile', profileRoutes);
 
 app.get('/', (req, res) => {
   res.json({ status: 'ok', service: 'FlowIQ Auth API' });

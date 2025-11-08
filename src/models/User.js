@@ -18,6 +18,16 @@ const userSchema = new mongoose.Schema(
       default: 'active',
       index: true,
     },
+    phone: { type: String },
+    location: { type: String },
+    avatarUrl: { type: String },
+    preferences: {
+      theme: { type: String, enum: ['light','dark','system'], default: 'system' },
+      notifications: {
+        email: { type: Boolean, default: true },
+        push: { type: Boolean, default: true },
+      },
+    },
   },
   { timestamps: true }
 );
