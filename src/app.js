@@ -12,6 +12,9 @@ import financeRoutes from './routes/finance.routes.js';
 import analyticsRoutes from './routes/analytics.routes.js';
 import aiRoutes from './routes/ai.routes.js';
 import profileRoutes from './routes/profile.routes.js';
+import notificationsRoutes from './routes/notifications.routes.js';
+import uiRoutes from './routes/ui.routes.js';
+import searchRoutes from './routes/search.routes.js';
 import { notFound, errorHandler } from './middleware/error.js';
 
 dotenv.config();
@@ -31,6 +34,9 @@ app.use('/finance', financeRoutes);
 app.use('/analytics', analyticsRoutes);
 app.use('/ai', aiRoutes);
 app.use('/profile', profileRoutes);
+app.use('/notifications', notificationsRoutes);
+app.use('/ui', uiRoutes);
+app.use('/search', searchRoutes);
 
 app.get('/', (req, res) => {
   res.json({ status: 'ok', service: 'FlowIQ Auth API' });

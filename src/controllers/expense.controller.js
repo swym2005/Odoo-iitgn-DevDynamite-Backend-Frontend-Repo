@@ -3,6 +3,8 @@ import path from 'path';
 import fs from 'fs';
 import { expenseCreateSchema, expenseReimburseSchema } from '../validators/expense.validators.js';
 import { createExpense, listExpenses, setStatus, reimburse, dashboardKPIs, expensesByProject } from '../services/expense.service.js';
+import { createNotification } from '../services/notifications.service.js';
+import { Roles } from '../utils/roles.js';
 
 const uploadDir = path.resolve('uploads/receipts');
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
@@ -45,16 +47,51 @@ export const expensesPost = async (req, res, next) => {
 };
 
 export const expenseApprove = async (req, res, next) => {
-  try { res.json({ success: true, expense: await setStatus(req.params.id, 'approved') }); } catch (e) { next(e); }
+  try {
+    const exp = await setStatus(req.params.id, 'approved');
+    // Notify submitter
+    await createNotification({
+      user: exp.submittedBy,
+      project: exp.project,
+      type: 'expense',
+      title: 'Expense Approved',
+      message: `${exp.description} has been approved`,
+      link: '/expenses',
+      meta: { expenseId: String(exp._id), amount: exp.amount },
+    });
+    res.json({ success: true, expense: exp });
+  } catch (e) { next(e); }
 };
 
 export const expenseReject = async (req, res, next) => {
-  try { res.json({ success: true, expense: await setStatus(req.params.id, 'rejected') }); } catch (e) { next(e); }
+  try {
+    const exp = await setStatus(req.params.id, 'rejected');
+    await createNotification({
+      user: exp.submittedBy,
+      project: exp.project,
+      type: 'expense',
+      title: 'Expense Rejected',
+      message: `${exp.description} has been rejected`,
+      link: '/expenses',
+      meta: { expenseId: String(exp._id), amount: exp.amount },
+    });
+    res.json({ success: true, expense: exp });
+  } catch (e) { next(e); }
 };
 
 export const expenseReimburse = async (req, res, next) => {
   try {
     validate(expenseReimburseSchema, req.body);
-    res.json({ success: true, expense: await reimburse(req.params.id) });
+    const exp = await reimburse(req.params.id);
+    await createNotification({
+      user: exp.submittedBy,
+      project: exp.project,
+      type: 'payment',
+      title: 'Expense Reimbursed',
+      message: `${exp.description} has been reimbursed`,
+      link: '/expenses',
+      meta: { expenseId: String(exp._id), amount: exp.amount },
+    });
+    res.json({ success: true, expense: exp });
   } catch (e) { next(e); }
 };

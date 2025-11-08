@@ -36,6 +36,7 @@ import {
   addComment,
   addAttachment,
 } from '../services/pm.service.js';
+import { createNotification } from '../services/notifications.service.js';
 
 const validate = (schema, payload) => {
   const { error, value } = schema.validate(payload, { abortEarly: false });
@@ -100,7 +101,22 @@ export const tasksPost = async (req, res, next) => {
 };
 
 export const taskPatch = async (req, res, next) => {
-  try { const data = validate(updateTaskSchema, req.body); res.json({ success: true, task: await updateTask(req.params.taskId, data) }); } catch (e) { next(e); }
+  try {
+    const data = validate(updateTaskSchema, req.body);
+    const task = await updateTask(req.params.taskId, data);
+    if (data.status) {
+      await createNotification({
+        audienceRole: 'Project Manager',
+        project: task.project,
+        type: 'task',
+        title: 'Task Status Updated',
+        message: `${task.title} moved to ${task.status}`,
+        link: `/pm/projects/${task.project}/tasks`,
+        meta: { taskId: String(task._id), status: task.status },
+      });
+    }
+    res.json({ success: true, task });
+  } catch (e) { next(e); }
 };
 
 export const timesheetsGet = async (req, res, next) => {

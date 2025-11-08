@@ -22,6 +22,8 @@ import {
   setVendorBillPaid,
   financeDashboard,
 } from '../services/finance.service.js';
+import { createNotification } from '../services/notifications.service.js';
+import { Roles } from '../utils/roles.js';
 
 const billsDir = path.resolve('uploads/bills');
 if (!fs.existsSync(billsDir)) fs.mkdirSync(billsDir, { recursive: true });
@@ -82,7 +84,13 @@ export const invoicesPost = async (req, res, next) => {
   try { const data = validate(customerInvoiceCreateSchema, req.body); res.status(201).json({ success: true, item: await createCustomerInvoice(data) }); } catch (e) { next(e); }
 };
 export const invoicesPaid = async (req, res, next) => {
-  try { res.json({ success: true, item: await setInvoicePaid(req.params.id) }); } catch (e) { next(e); }
+  try {
+    const inv = await setInvoicePaid(req.params.id);
+    // Notify Finance and Admin roles
+    await createNotification({ audienceRole: Roles.Finance, project: inv.project, type: 'payment', title: 'Invoice Paid', message: `${inv.number} marked paid`, link: '/finance/invoices', meta: { invoiceId: String(inv._id), amount: inv.amount } });
+    await createNotification({ audienceRole: Roles.Admin, project: inv.project, type: 'payment', title: 'Invoice Paid', message: `${inv.number} marked paid`, link: '/finance/invoices', meta: { invoiceId: String(inv._id), amount: inv.amount } });
+    res.json({ success: true, item: inv });
+  } catch (e) { next(e); }
 };
 
 // Vendor Bills
@@ -97,5 +105,10 @@ export const billsPost = async (req, res, next) => {
   } catch (e) { next(e); }
 };
 export const billsPaid = async (req, res, next) => {
-  try { res.json({ success: true, item: await setVendorBillPaid(req.params.id) }); } catch (e) { next(e); }
+  try {
+    const bill = await setVendorBillPaid(req.params.id);
+    await createNotification({ audienceRole: Roles.Finance, project: bill.project, type: 'payment', title: 'Vendor Bill Paid', message: `${bill.number} marked paid`, link: '/finance/bills', meta: { billId: String(bill._id), amount: bill.amount } });
+    await createNotification({ audienceRole: Roles.Admin, project: bill.project, type: 'payment', title: 'Vendor Bill Paid', message: `${bill.number} marked paid`, link: '/finance/bills', meta: { billId: String(bill._id), amount: bill.amount } });
+    res.json({ success: true, item: bill });
+  } catch (e) { next(e); }
 };
