@@ -1,0 +1,73 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>FlowIQ — Finance Dashboard</title><link href="/assets/css/dashboard.css" rel="stylesheet"/><link href="/styles.css" rel="stylesheet"/></head><body>
+<div class="layout">
+	<aside class="sidebar">
+		<div class="brand"><span class="logo-dot"></span><span>FlowIQ Finance</span></div>
+		<nav class="nav">
+			<a class="nav-item active" href="#"><span>Dashboard</span></a>
+			<a class="nav-item" href="#" id="navInvoices"><span>Invoices</span></a>
+			<a class="nav-item" href="#" id="navBills"><span>Vendor Bills</span></a>
+			<a class="nav-item" href="#" id="navSales"><span>Sales Orders</span></a>
+			<a class="nav-item" href="#" id="navPurchase"><span>Purchase Orders</span></a>
+		</nav>
+		<div class="footer">Logged in as Finance</div>
+	</aside>
+	<main>
+		<div class="topbar">
+			<div class="search"><input placeholder="Search documents..." id="finSearch"/></div>
+			<div class="space-between" style="gap:.6rem">
+				<a href="/" class="button-outline">Logout</a>
+				<button class="button-primary" id="btnNewDoc">+ New</button>
+			</div>
+		</div>
+		<div class="content" id="financeContent">
+			<section class="kpis" id="kpiSection">
+				<div class="kpi"><h3>Total Revenue</h3><div class="value" id="kRev">—</div></div>
+				<div class="kpi"><h3>Total Expenses</h3><div class="value" id="kExp">—</div></div>
+				<div class="kpi"><h3>Profit</h3><div class="value" id="kProfit">—</div></div>
+				<div class="kpi"><h3>Margin %</h3><div class="value" id="kMargin">—</div></div>
+			</section>
+			<section class="table-card" id="secInvoices">
+				<h2>Customer Invoices</h2>
+				<div class="table-wrap"><table class="table" id="tblInvoices"><thead><tr><th>Number</th><th>Customer</th><th>Amount</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead><tbody></tbody></table></div>
+			</section>
+			<section class="table-card" id="secBills" style="margin-top:1rem">
+				<h2>Vendor Bills</h2>
+				<div class="table-wrap"><table class="table" id="tblBills"><thead><tr><th>Number</th><th>Vendor</th><th>Amount</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead><tbody></tbody></table></div>
+			</section>
+			<section class="table-card" id="secSales" style="margin-top:1rem">
+				<h2>Sales Orders</h2>
+				<div class="table-wrap"><table class="table" id="tblSales"><thead><tr><th>Number</th><th>Customer</th><th>Amount</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead><tbody></tbody></table></div>
+			</section>
+			<section class="table-card" id="secPurchase" style="margin-top:1rem">
+				<h2>Purchase Orders</h2>
+				<div class="table-wrap"><table class="table" id="tblPurchase"><thead><tr><th>Number</th><th>Vendor</th><th>Amount</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead><tbody></tbody></table></div>
+			</section>
+		</div>
+	</main>
+</div>
+
+<!-- New Document Modal -->
+<div class="modal-backdrop hidden" id="modalNewDoc">
+	<div class="modal" style="width:min(760px,92vw)">
+		<h3>Create Financial Document</h3>
+		<div class="form-grid">
+			<label>Type</label>
+			<select id="docType">
+				<option value="invoice">Customer Invoice</option>
+				<option value="bill">Vendor Bill</option>
+				<option value="sales">Sales Order</option>
+				<option value="purchase">Purchase Order</option>
+			</select>
+			<label>Number / Ref</label><input id="docNumber" />
+			<label>Party (Customer/Vendor)</label><input id="docParty" />
+			<div class="flex"><div style="flex:1"><label>Amount</label><input id="docAmount" type="number" step="0.01" /></div><div style="flex:1"><label>Date</label><input id="docDate" type="date" /></div></div>
+			<label>Project (optional)</label><select id="docProject"></select>
+		</div>
+		<div class="space-between" style="margin-top:1rem"><button class="button-outline" data-close>Cancel</button><button class="button-primary" id="docCreateBtn">Create</button></div>
+	</div>
+</div>
+
+<script src="/assets/js/common.js"></script>
+<script src="/assets/js/auth-guard.js?v=1"></script>
+<script src="/finance-dashboard/finance.js?v=2"></script>
+</body></html>

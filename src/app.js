@@ -24,6 +24,23 @@ app.use(cors());
 app.use(express.json());
 // Static hosting for uploaded receipts (for preview)
 app.use('/uploads', express.static(path.resolve('uploads')));
+// Serve frontend static assets (public folder)
+const publicDir = path.resolve('public');
+// Static with explicit cache headers to avoid stale UI
+app.use(express.static(publicDir, {
+  etag: false,
+  lastModified: false,
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+    } else if (filePath.endsWith('.js') || filePath.endsWith('.css')) {
+      // allow very short caching for assets
+      res.setHeader('Cache-Control', 'public, max-age=60');
+    }
+  }
+}));
 
 app.use('/auth', authRoutes);
 app.use('/admin', adminRoutes);
@@ -38,8 +55,9 @@ app.use('/notifications', notificationsRoutes);
 app.use('/ui', uiRoutes);
 app.use('/search', searchRoutes);
 
+// Fallback root to index.html (frontend entry)
 app.get('/', (req, res) => {
-  res.json({ status: 'ok', service: 'FlowIQ Auth API' });
+  res.sendFile(path.join(publicDir, 'index.html'));
 });
 
 app.use(notFound);

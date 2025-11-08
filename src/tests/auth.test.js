@@ -16,7 +16,8 @@ describe('Auth Flow', () => {
     expect(res.status).toBe(201);
     expect(res.body.success).toBe(true);
     expect(res.body.user.email).toBe(signupPayload.email.toLowerCase());
-    expect(res.body.redirectPath).toBe('/admin/dashboard');
+  // Updated dashboard path per new role-based routing
+  expect(res.body.redirectPath).toBe('/admin-dashboard');
     expect(res.body.token).toBeDefined();
     const decoded = jwt.decode(res.body.token);
     expect(decoded.role).toBe('Admin');
@@ -31,7 +32,8 @@ describe('Auth Flow', () => {
     const expMs = decoded.exp * 1000 - Date.now();
     const days = expMs / (1000 * 60 * 60 * 24);
     expect(days).toBeGreaterThanOrEqual(29); // approximate
-    expect(res.body.redirectPath).toBe('/team/dashboard');
+  // Updated team dashboard path per new role-based routing
+  expect(res.body.redirectPath).toBe('/team-dashboard');
   });
 
   test('Forgot password masks user existence', async () => {

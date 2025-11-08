@@ -1,0 +1,52 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>Team Dashboard — FlowIQ</title><link href="/assets/css/dashboard.css" rel="stylesheet"/><link href="/styles.css" rel="stylesheet"/></head><body>
+<div class="layout">
+	<aside class="sidebar">
+		<div class="brand"><span class="logo-dot"></span><span>FlowIQ Team</span></div>
+		<nav class="nav">
+			<a class="nav-item active" href="#"><span>My Tasks</span></a>
+			<a class="nav-item" href="/timesheets-ui/"><span>Timesheets</span></a>
+		</nav>
+		<div class="footer">Logged in as Team Member</div>
+	</aside>
+	<main>
+		<div class="topbar">
+			<div class="search"><input placeholder="Search tasks..."/></div>
+			<div class="space-between" style="gap:.6rem">
+				<a href="/" class="button-outline" id="logoutBtn">Logout</a>
+				<button class="button-primary" id="btnNewTask">+ New Task</button>
+			</div>
+		</div>
+		<div class="content">
+			<section class="kpis">
+				<div class="kpi"><h3>Open Tasks</h3><div class="value" id="kpiOpen">—</div></div>
+				<div class="kpi"><h3>Done Tasks</h3><div class="value" id="kpiDone">—</div></div>
+				<div class="kpi"><h3>Hours Logged</h3><div class="value" id="kpiHours">—</div></div>
+			</section>
+			<section class="table-card">
+				<div class="space-between"><h2>My Tasks</h2></div>
+				<div class="table-wrap">
+					<table class="table" id="tblMyTasks">
+						<thead><tr><th>Title</th><th>Status</th><th>Priority</th><th>Due</th><th>Project</th></tr></thead>
+						<tbody></tbody>
+					</table>
+				</div>
+			</section>
+		</div>
+	</main>
+</div>
+<!-- New Task Modal -->
+<div class="modal-backdrop hidden" id="modalTask">
+	<div class="modal" style="width:min(700px,92vw)">
+		<h3>New Task</h3>
+		<div class="form-grid">
+			<label>Title</label><input id="tTitle" />
+			<label>Description</label><textarea id="tDesc"></textarea>
+			<div class="flex"><div style="flex:1"><label>Due Date</label><input id="tDue" type="date" /></div><div style="flex:1"><label>Priority</label><select id="tPriority"><option>low</option><option>medium</option><option>high</option><option>critical</option></select></div></div>
+		</div>
+		<div class="space-between" style="margin-top:1rem"><button class="button-outline" data-close>Cancel</button><button class="button-primary" id="tCreateBtn">Create</button></div>
+	</div>
+</div>
+<script src="/assets/js/common.js"></script>
+<script src="/assets/js/auth-guard.js?v=1"></script>
+<script src="/team-dashboard/team.js?v=1"></script>
+</body></html>

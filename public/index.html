@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FlowIQ — Login / Signup</title>
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <meta name="description" content="Smarter Project Management — Powered by AI" />
+  <link rel="preconnect" href="https://unpkg.com" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="/styles.css" rel="stylesheet" />
+</head>
+<body>
+  <div id="root"><div style="min-height:60vh;display:flex;align-items:center;justify-content:center;color:#9aa3b2;font-family:Inter,system-ui">Loading FlowIQ UI…</div></div>
+
+  <!-- React 18 UMD (primary) -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <!-- Fallback loader if primary CDNs blocked -->
+  <script>
+    (function(){
+      function inject(url){return new Promise(function(res,rej){var s=document.createElement('script');s.src=url;s.async=true;s.onload=res;s.onerror=rej;document.head.appendChild(s);});}
+      function ensure(){
+        const tasks=[];
+        if(!window.React){tasks.push(inject('https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js'));}
+        if(!window.ReactDOM){tasks.push(inject('https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js'));}
+        return Promise.allSettled(tasks);
+      }
+      ensure().finally(function(){
+        var s=document.createElement('script');s.src='/app.js?v=4';s.type='text/javascript';document.body.appendChild(s);
+      });
+    })();
+  </script>
+  <noscript>
+    <div style="padding:1rem;color:#e11d48">JavaScript is disabled. Enable it to use FlowIQ.</div>
+  </noscript>
+</body>
+</html>

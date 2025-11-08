@@ -7,9 +7,9 @@ export const Roles = {
 };
 
 export const roleRedirect = {
-  [Roles.Admin]: '/admin/dashboard',
-  [Roles.ProjectManager]: '/pm/dashboard',
-  [Roles.TeamMember]: '/team/dashboard',
-  [Roles.Finance]: '/finance/dashboard',
-  [Roles.Vendor]: '/vendor/dashboard',
+  [Roles.Admin]: '/admin-dashboard',
+  [Roles.ProjectManager]: '/pm-dashboard',
+  [Roles.TeamMember]: '/team-dashboard',
+  [Roles.Finance]: '/finance-dashboard',
+  [Roles.Vendor]: '/vendor-dashboard',
 };

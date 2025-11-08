@@ -58,8 +58,16 @@ export const projectsGet = async (req, res, next) => {
 
 export const projectsPost = async (req, res, next) => {
   try {
-    const data = validate(createProjectSchema, req.body);
-    res.status(201).json({ success: true, project: await createProject(data) });
+    // Auto-inject current user as manager if not provided (frontend omits it)
+    const incoming = { ...req.body };
+    if (!incoming.manager) incoming.manager = req.user.id; // ensure manager present
+    // Basic safety: only Admin can set a different manager manually
+    if (incoming.manager !== req.user.id && req.user.role !== 'Admin') {
+      incoming.manager = req.user.id;
+    }
+    const data = validate(createProjectSchema, incoming);
+    const project = await createProject(data);
+    res.status(201).json({ success: true, project });
   } catch (e) { next(e); }
 };
 

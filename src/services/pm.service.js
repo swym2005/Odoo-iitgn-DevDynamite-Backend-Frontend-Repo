@@ -65,7 +65,9 @@ export const listProjects = async (user, { status, from, to } = {}) => {
 };
 
 export const createProject = async (payload) => {
-  const p = await Project.create(payload);
+  // Ensure new projects start as active by default so KPIs reflect immediately
+  const defaults = { status: 'active', startDate: new Date() };
+  const p = await Project.create({ ...defaults, ...payload });
   return p;
 };
 

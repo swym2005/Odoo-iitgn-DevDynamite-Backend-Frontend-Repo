@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>FlowIQ — PM Dashboard</title>
+	<link href="/assets/css/dashboard.css" rel="stylesheet" />
+	<link href="/styles.css" rel="stylesheet" />
+</head>
+<body>
+	<div class="layout">
+		<aside class="sidebar">
+			<div class="brand"><span class="logo-dot"></span><span>FlowIQ PM</span></div>
+			<nav class="nav">
+				<a class="nav-item active" href="#"><span>Projects</span></a>
+				<a class="nav-item" href="/tasks/"><span>Tasks</span></a>
+				<a class="nav-item" href="/timesheets-ui/"><span>Timesheets</span></a>
+				<a class="nav-item" href="/expenses-dashboard/"><span>Expenses</span></a>
+			</nav>
+			<div class="footer">Logged in as PM</div>
+		</aside>
+		<main>
+			<div class="topbar">
+				<div class="search"><input placeholder="Search projects..." /></div>
+				<div class="space-between" style="gap:.6rem">
+					<a href="/" class="button-outline">Logout</a>
+					<button class="button-primary" id="btnNewProj">+ New Project</button>
+				</div>
+			</div>
+			<div class="content">
+				<section class="kpis">
+					<div class="kpi"><h3>Active Projects</h3><div class="value" id="kpiActive"></div></div>
+					<div class="kpi"><h3>Profit %</h3><div class="value" id="kpiProfit">—</div></div>
+					<div class="kpi"><h3>Hours Logged</h3><div class="value" id="kpiHours">—</div></div>
+					<div class="kpi"><h3>Pending Invoices</h3><div class="value" id="kpiPending">—</div></div>
+				</section>
+				<section class="table-card">
+					<div class="space-between"><h2>Projects</h2>
+						<div class="flex">
+							<button class="button-outline" id="btnView">View Project</button>
+							<button class="button-outline" id="btnTask">Create Task</button>
+							<button class="button-outline" id="btnApprove">Approve Expense</button>
+						</div>
+					</div>
+					<div class="table-wrap">
+						<table class="table" id="tblProjects">
+							<thead><tr><th>Project</th><th>Client</th><th>Status</th><th>Budget</th><th>Profit</th><th>Deadline</th><th>Actions</th></tr></thead>
+							<tbody></tbody>
+						</table>
+					</div>
+				</section>
+				<div class="grid" style="grid-template-columns:1fr 1fr;gap:1rem;margin-top:1rem">
+					<div class="table-card"><h2>Cost vs Revenue</h2><div class="chart-placeholder"><canvas id="chartCvR"></canvas></div></div>
+					<div class="table-card"><h2>Team Utilization</h2><div class="chart-placeholder"><canvas id="chartUtil"></canvas></div></div>
+				</div>
+			</div>
+		</main>
+	</div>
+
+	<!-- New Project Modal -->
+	<div class="modal-backdrop hidden" id="modalProject">
+		<div class="modal" style="width:min(720px,92vw)">
+			<h3>New Project</h3>
+			<div class="form-grid">
+				<label>Project Name</label><input id="pName" />
+				<label>Description</label><textarea id="pDesc"></textarea>
+				<div class="flex"><div style="flex:1"><label>Budget</label><input id="pBudget" type="number" /></div><div style="flex:1"><label>Deadline</label><input id="pDeadline" type="date" /></div></div>
+				<label>Assign Team</label><input id="pTeam" placeholder="Comma separated emails" />
+				<label>Sales Order Link (optional)</label><input id="pSOLink" placeholder="https://..." />
+			</div>
+			<div class="space-between" style="margin-top:1rem"><button class="button-outline" data-close>Cancel</button><button class="button-primary" id="pCreateBtn">Create</button></div>
+		</div>
+	</div>
+
+	<!-- Pending Expenses Modal -->
+	<div class="modal-backdrop hidden" id="modalExp">
+		<div class="modal" style="width:min(760px,92vw)">
+			<h3>Pending Expenses</h3>
+			<div class="table-wrap" style="max-height:50vh;overflow:auto">
+				<table class="table" id="tblPendExp">
+					<thead><tr><th>Description</th><th>Amount</th><th>Submitted By</th><th>Date</th><th>Actions</th></tr></thead>
+					<tbody></tbody>
+				</table>
+			</div>
+			<div class="space-between" style="margin-top:1rem"><button class="button-outline" data-close>Close</button></div>
+		</div>
+	</div>
+
+	<script src="/assets/js/common.js"></script>
+	<script src="/assets/js/auth-guard.js?v=1"></script>
+	<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+	<script src="/pm-dashboard/pm.js?v=2"></script>
+</body>
+</html>
