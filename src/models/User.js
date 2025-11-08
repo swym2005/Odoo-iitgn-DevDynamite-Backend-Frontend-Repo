@@ -12,6 +12,12 @@ const userSchema = new mongoose.Schema(
       enum: [Roles.Admin, Roles.ProjectManager, Roles.TeamMember, Roles.Finance, Roles.Vendor],
       default: Roles.TeamMember,
     },
+    status: {
+      type: String,
+      enum: ['active', 'inactive'],
+      default: 'active',
+      index: true,
+    },
   },
   { timestamps: true }
 );
