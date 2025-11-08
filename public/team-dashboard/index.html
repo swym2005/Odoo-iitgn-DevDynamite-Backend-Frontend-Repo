@@ -1,7 +1,7 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>Team Dashboard — FlowIQ</title><link href="/assets/css/dashboard.css" rel="stylesheet"/><link href="/styles.css" rel="stylesheet"/></head><body>
+<!doctype html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>Team Dashboard — OrbitOne</title><link href="/assets/css/dashboard.css" rel="stylesheet"/><link href="/assets/css/cards.css" rel="stylesheet"/><link href="/styles.css" rel="stylesheet"/></head><body>
 <div class="layout">
 	<aside class="sidebar">
-		<div class="brand"><span class="logo-dot"></span><span>FlowIQ Team</span></div>
+		<div class="brand">OrbitOne</div>
 		<nav class="nav">
 			<a class="nav-item active" href="#" data-roles="Team Member,Admin"><span>My Tasks</span></a>
 			<a class="nav-item" href="/timesheets-ui/" data-roles="Team Member,Admin,Project Manager"><span>Timesheets</span></a>
@@ -22,15 +22,22 @@
 				<div class="kpi"><h3>Done Tasks</h3><div class="value" id="kpiDone">—</div></div>
 				<div class="kpi"><h3>Hours Logged</h3><div class="value" id="kpiHours">—</div></div>
 			</section>
-			<section class="table-card">
-				<div class="space-between"><h2>My Tasks</h2></div>
-				<div class="table-wrap">
-					<table class="table" id="tblMyTasks">
-						<thead><tr><th>Title</th><th>Status</th><th>Priority</th><th>Due</th><th>Project</th></tr></thead>
-						<tbody></tbody>
-					</table>
+			<section class="table-card" style="margin-bottom:1rem">
+				<div class="space-between" style="align-items:center"><h2 style="margin:0;font-size:.95rem">Quick Timesheet</h2><small style="opacity:.6">Log work fast</small></div>
+				<div class="form-grid" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr));margin-top:.6rem;gap:.6rem">
+					<div><label style="font-size:.6rem">Project</label><select id="tsProject"></select></div>
+					<div><label style="font-size:.6rem">Hours</label><input id="tsHours" type="number" min="0" max="24" step="0.25"/></div>
+					<div><label style="font-size:.6rem">Billable</label><select id="tsBillable"><option value="true">Billable</option><option value="false">Non-billable</option></select></div>
+					<div><label style="font-size:.6rem">Date</label><input id="tsDate" type="date" /></div>
+					<div style="grid-column:1/-1"><label style="font-size:.6rem">Note</label><input id="tsNote" placeholder="Optional note"/></div>
 				</div>
+				<div style="margin-top:.6rem;display:flex;gap:.5rem;justify-content:flex-end"><button class="button-outline" id="tsReset">Reset</button><button class="button-primary" id="tsSubmit">Log Hours</button></div>
+				<div id="tsFeedback" style="font-size:.6rem;margin-top:.35rem"></div>
 			</section>
+			<section class="table-card">
+							<div class="space-between"><h2>My Tasks</h2></div>
+							<div id="myTaskCards" class="cards-grid" style="padding:.25rem"></div>
+						</section>
 		</div>
 	</main>
 </div>

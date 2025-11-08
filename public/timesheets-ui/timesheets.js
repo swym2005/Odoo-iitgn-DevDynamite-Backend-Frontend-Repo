@@ -7,8 +7,17 @@
 
   async function loadProjects(){
     try{ const res = await api.get('/pm/projects'); projects = res.projects||[]; }catch{ projects=[]; }
-    el('tsProjectFilter').innerHTML = '<option value="">All Projects</option>' + projects.map(p=>`<option value="${p._id}">${p.name}</option>`).join('');
-    el('tsProjectSelect').innerHTML = projects.map(p=>`<option value="${p._id}">${p.name}</option>`).join('');
+    const filterSel = el('tsProjectFilter');
+    const createSel = el('tsProjectSelect');
+    if(!projects.length){
+      filterSel.innerHTML = '<option value="">(No Projects)</option>';
+      createSel.innerHTML = '<option value="">(No Projects)</option>';
+      return;
+    }
+    filterSel.innerHTML = '<option value="">All Projects</option>' + projects.map(p=>`<option value="${p._id}">${p.name}</option>`).join('');
+    createSel.innerHTML = projects.map(p=>`<option value="${p._id}">${p.name}</option>`).join('');
+    // Default filter if empty
+    if(!filterSel.value){ filterSel.value = projects[0]._id; }
   }
 
   async function loadTasks(projectId){
@@ -20,8 +29,10 @@
   async function loadTimesheets(){
     const pid = el('tsProjectFilter').value || ((projects[0] && projects[0]._id) || '');
     if(!pid){ entries=[]; render(); return; }
-    const res = await api.get(`/pm/projects/${pid}/timesheets`);
-    entries = res.timesheets||[];
+    try{
+      const res = await api.get(`/pm/projects/${pid}/timesheets`);
+      entries = res.timesheets||[];
+    }catch(e){ entries=[]; }
     entries = entries.map(t=> ({ date: t.date? new Date(t.date).toISOString().slice(0,10):'', task: t.task?.title||'', hours: t.hours, billable: t.billable, notes: t.note||'', project: projects.find(p=> String(p._id)===String(t.project))?.name || '' }));
   }
 

@@ -60,17 +60,20 @@
     try{ await api.patch(`/admin/users/${selectedUser._id}`, { status:'inactive' }); start(); }catch(e){ alert(e.message); }
   }
 
+  // Overhauled system analytics using overview analytics endpoint for richer data
   function initAnalytics(){
-    api.get('/admin/analytics').then(res=>{
+    api.get('/analytics/overview').then(res=>{
       if(!window.Chart) return;
       const revCtx=document.getElementById('chartRevenue');
       const usersCtx=document.getElementById('chartUsers');
-      const revLabels=res.analytics.revenueByMonth.map(r=> r._id.month+'/'+r._id.year);
-      const revData=res.analytics.revenueByMonth.map(r=> r.total);
-      new Chart(revCtx,{ type:'bar', data:{ labels:revLabels, datasets:[{ label:'Revenue', data:revData, backgroundColor:'#4f9fff55', borderColor:'#4f9fff' }] }, options:{ plugins:{legend:{labels:{color:'#e6edf5'}}}, scales:{x:{ticks:{color:'#9aa9bd'}},y:{ticks:{color:'#9aa9bd'}}}} });
-      const userLabels=res.analytics.usersByRole.map(u=>u.role);
-      const userData=res.analytics.usersByRole.map(u=>u.count);
-      new Chart(usersCtx,{ type:'bar', data:{ labels:userLabels, datasets:[{ label:'Users', data:userData, backgroundColor:'#8b5cf655', borderColor:'#8b5cf6' }] }, options:{ plugins:{legend:{labels:{color:'#e6edf5'}}}, scales:{x:{ticks:{color:'#9aa9bd'}},y:{ticks:{color:'#9aa9bd'}}}} });
+      const growth=res.charts?.revenueGrowth||[];
+      const revLabels=growth.map(r=> r.label);
+      const revData=growth.map(r=> r.revenue);
+      new Chart(revCtx,{ type:'line', data:{ labels:revLabels, datasets:[{ label:'Revenue', data:revData, borderColor:'#4f9fff', backgroundColor:'#4f9fff33' }] }, options:{ plugins:{legend:{labels:{color:'#e6edf5'}}}, scales:{x:{ticks:{color:'#9aa9bd'}},y:{ticks:{color:'#9aa9bd'}}}} });
+      const util = res.charts?.utilization || [];
+      const userLabels=util.map(u=>u.name||String(u.userId).slice(-6));
+      const userHours=util.map(u=>u.hours);
+      new Chart(usersCtx,{ type:'bar', data:{ labels:userLabels, datasets:[{ label:'Hours Logged', data:userHours, backgroundColor:'#8b5cf655', borderColor:'#8b5cf6' }] }, options:{ plugins:{legend:{labels:{color:'#e6edf5'}}}, scales:{x:{ticks:{color:'#9aa9bd'}},y:{ticks:{color:'#9aa9bd'}}}} });
     }).catch(()=>{});
   }
 

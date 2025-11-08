@@ -1,4 +1,6 @@
 import { Expense } from '../models/Expense.js';
+import { CustomerInvoice } from '../models/CustomerInvoice.js';
+import { Project } from '../models/Project.js';
 import mongoose from 'mongoose';
 
 export const createExpense = async (userId, { project, description, amount, billable }, receiptUrl) => {
@@ -6,16 +8,26 @@ export const createExpense = async (userId, { project, description, amount, bill
   return exp;
 };
 
-export const listExpenses = async (user, { project } = {}) => {
+export const listExpenses = async (user, { project, status, from, to, search } = {}) => {
   const q = {};
   if (project) q.project = new mongoose.Types.ObjectId(project);
+  if (status) q.status = Array.isArray(status) ? { $in: status } : status;
+  if (from || to) {
+    q.createdAt = {};
+    if (from) q.createdAt.$gte = new Date(from);
+    if (to) q.createdAt.$lte = new Date(to);
+  }
   // For simplicity: Admin/PM see all; others see own submissions
   if (!(user.role === 'Admin' || user.role === 'Project Manager')) q.submittedBy = user.id;
-  const rows = await Expense.find(q)
+  let rows = await Expense.find(q)
     .populate('project', 'name')
     .populate('submittedBy', 'name email')
     .sort({ createdAt: -1 })
     .lean();
+  if (search) {
+    const s = String(search).toLowerCase();
+    rows = rows.filter(r => [r.description, r.project?.name, r.submittedBy?.name].some(v => (v||'').toString().toLowerCase().includes(s)));
+  }
   // Provide frontend-friendly aliases: expenseName (description) and date (createdAt)
   return rows.map(r => ({
     ...r,
@@ -30,6 +42,28 @@ export const setStatus = async (id, status) => {
   exp.status = status;
   await exp.save();
   return exp;
+};
+
+// Attach approved billable expense to a draft invoice (aggregate amount)
+export const maybeAttachToInvoice = async (expense) => {
+  if (!expense || expense.status !== 'approved' || !expense.billable || expense.billed) return expense;
+  // Find existing draft invoice for project, else create one using project.client as customer fallback
+  let invoice = await CustomerInvoice.findOne({ project: expense.project, status: 'Draft' });
+  if (!invoice) {
+    const proj = await Project.findById(expense.project).lean();
+    const customer = proj?.client || 'Client';
+    // Generate new invoice via counter logic reusing finance service number sequence if possible. Fallback simple prefix here.
+    // We cannot easily import finance counter; generate timestamp-based unique number.
+    const number = 'INVX-' + Date.now();
+    invoice = await CustomerInvoice.create({ number, customer, project: expense.project, amount: 0, status: 'Draft', date: new Date() });
+  }
+  invoice.amount += expense.amount;
+  await invoice.save();
+  expense.billed = true;
+  expense.billedAt = new Date();
+  expense.invoice = invoice._id;
+  await expense.save();
+  return expense;
 };
 
 export const reimburse = async (id) => {

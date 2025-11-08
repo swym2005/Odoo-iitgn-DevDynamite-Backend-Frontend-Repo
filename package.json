@@ -1,7 +1,7 @@
 {
-  "name": "flowiq-auth-backend",
+  "name": "orbitone-auth-backend",
   "version": "0.1.0",
-  "description": "FlowIQ Authentication Module (MERN backend: Express + MongoDB)",
+  "description": "OrbitOne Authentication Module (MERN backend: Express + MongoDB)",
   "main": "src/app.js",
   "type": "module",
   "scripts": {
@@ -11,7 +11,9 @@
     "start": "node src/app.js",
     "start:5050": "cross-env PORT=5050 node src/app.js",
   "start:5051": "cross-env PORT=5051 node src/app.js",
-    "test": "powershell -NoProfile -Command \"$env:NODE_ENV='test'; node --experimental-vm-modules ./node_modules/jest/bin/jest.js --runInBand\""
+    "test": "powershell -NoProfile -Command \"$env:NODE_ENV='test'; node --experimental-vm-modules ./node_modules/jest/bin/jest.js --runInBand\"",
+    "seed": "node ./scripts/seed.js",
+    "seed:reset": "node ./scripts/seed.js --reset"
   },
   "jest": {
     "testEnvironment": "node",

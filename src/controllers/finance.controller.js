@@ -21,6 +21,7 @@ import {
   createVendorBill,
   setVendorBillPaid,
   financeDashboard,
+  createInvoiceFromSalesOrder,
 } from '../services/finance.service.js';
 import { createNotification } from '../services/notifications.service.js';
 import { Roles } from '../utils/roles.js';
@@ -50,7 +51,7 @@ export const dashboard = async (req, res, next) => {
 
 // Sales Orders
 export const salesOrdersGet = async (req, res, next) => {
-  try { res.json({ success: true, items: await listSalesOrders() }); } catch (e) { next(e); }
+  try { res.json({ success: true, ...(await listSalesOrders(req.query)) }); } catch (e) { next(e); }
 };
 export const salesOrdersPost = async (req, res, next) => {
   try { const data = validate(salesOrderCreateSchema, req.body); res.status(201).json({ success: true, item: await createSalesOrder(data) }); } catch (e) { next(e); }
@@ -64,7 +65,7 @@ export const salesOrdersPaid = async (req, res, next) => {
 
 // Purchase Orders
 export const purchaseOrdersGet = async (req, res, next) => {
-  try { res.json({ success: true, items: await listPurchaseOrders() }); } catch (e) { next(e); }
+  try { res.json({ success: true, ...(await listPurchaseOrders(req.query)) }); } catch (e) { next(e); }
 };
 export const purchaseOrdersPost = async (req, res, next) => {
   try { const data = validate(purchaseOrderCreateSchema, req.body); res.status(201).json({ success: true, item: await createPurchaseOrder(data) }); } catch (e) { next(e); }
@@ -78,7 +79,7 @@ export const purchaseOrdersPaid = async (req, res, next) => {
 
 // Customer Invoices
 export const invoicesGet = async (req, res, next) => {
-  try { res.json({ success: true, items: await listCustomerInvoices() }); } catch (e) { next(e); }
+  try { res.json({ success: true, ...(await listCustomerInvoices(req.query)) }); } catch (e) { next(e); }
 };
 export const invoicesPost = async (req, res, next) => {
   try { const data = validate(customerInvoiceCreateSchema, req.body); res.status(201).json({ success: true, item: await createCustomerInvoice(data) }); } catch (e) { next(e); }
@@ -95,7 +96,7 @@ export const invoicesPaid = async (req, res, next) => {
 
 // Vendor Bills
 export const billsGet = async (req, res, next) => {
-  try { res.json({ success: true, items: await listVendorBills() }); } catch (e) { next(e); }
+  try { res.json({ success: true, ...(await listVendorBills(req.query)) }); } catch (e) { next(e); }
 };
 export const billsPost = async (req, res, next) => {
   try {

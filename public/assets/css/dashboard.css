@@ -1,4 +1,4 @@
-/* FlowIQ Dashboard Theme */
+/* OrbitOne Dashboard Theme */
 :root {
   --bg:#0d101a;
   --panel:#121826cc;
@@ -25,8 +25,10 @@ a{color:var(--accent-alt);text-decoration:none;}
 
 .layout{display:grid;grid-template-columns:240px 1fr;min-height:100vh;}
 .sidebar{background:linear-gradient(180deg,#121a29,#101723);border-right:1px solid var(--border);display:flex;flex-direction:column;}
-.sidebar .brand{padding:1.2rem 1.4rem;font-size:1.1rem;font-weight:700;letter-spacing:.5px;display:flex;align-items:center;gap:.6rem;}
-.brand .logo-dot{width:14px;height:14px;border-radius:50%;background:radial-gradient(circle at 40% 40%,var(--accent-alt),transparent 70%);box-shadow:0 0 16px var(--accent-alt),0 0 30px #4f9fff66;}
+.sidebar .brand{padding:1.2rem 1.4rem;font-size:1.15rem;font-weight:800;letter-spacing:.6px;display:flex;align-items:center;gap:.6rem;background:linear-gradient(90deg,#7e6bff,#4f9fff 45%,#22d3ee);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 6px #4f9fff44);}
+.brand .logo-dot{width:14px;height:14px;border-radius:50%;position:relative;background:radial-gradient(circle at 40% 40%,var(--accent-alt),transparent 60%);box-shadow:0 0 14px var(--accent-alt),0 0 24px #4f9fff66;}
+.brand .logo-dot::after{content:"";position:absolute;inset:-3px;border:2px dashed #7ea6ff66;border-radius:50%;animation:orbit 8s linear infinite;}
+@keyframes orbit{to{transform:rotate(360deg)}}
 .nav{flex:1;padding:.5rem 0;}
 .nav-item{padding:.75rem 1.2rem;margin:.25rem .8rem;border-radius:10px;font-weight:500;display:flex;align-items:center;gap:.6rem;color:var(--muted);cursor:pointer;transition:.18s;background:transparent;}
 .nav-item:hover,.nav-item.active{color:#fff;background:linear-gradient(90deg,#1d2738,#1b2536);box-shadow:0 0 0 1px #ffffff08,0 0 0 2px #4f9fff22 inset;}

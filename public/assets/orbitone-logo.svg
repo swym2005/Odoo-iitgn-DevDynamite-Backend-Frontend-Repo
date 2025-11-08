@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="140" height="32" viewBox="0 0 140 32" fill="none">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="140" y2="32" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#4f9fff"/>
+      <stop offset="0.5" stop-color="#7e6bff"/>
+      <stop offset="1" stop-color="#8b5cf6"/>
+    </linearGradient>
+  </defs>
+  <circle cx="20" cy="16" r="12" stroke="url(#g)" stroke-width="3" fill="#0b1220" />
+  <circle cx="20" cy="16" r="6" fill="url(#g)" />
+  <path d="M48 9h8.2c5.4 0 9.8 4.4 9.8 9.9 0 5.6-4.4 10.1-9.8 10.1H48V9Zm8.05 15.9c3.4 0 6-2.7 6-6 0-3.3-2.6-5.9-6-5.9h-4v11.9h4Z" fill="url(#g)"/>
+  <path d="M73 9h4v14.2c0 2.4-.5 4.2-1.6 5.5-1.1 1.3-2.9 2.3-5.4 2.3-1.5 0-2.9-.2-4.1-.6v-3.5c1.1.3 2.3.5 3.5.5 1.2 0 2-.4 2.5-1.1.5-.7.7-1.7.7-3.2V9Z" fill="url(#g)"/>
+  <path d="M82.5 9h4v20h-4V9Z" fill="url(#g)"/>
+  <path d="M90 19.1c0-5.6 4.2-10.3 10.4-10.3 6.3 0 10.4 4.7 10.4 10.3 0 5.7-4.1 10.3-10.4 10.3S90 24.8 90 19.1Zm16.7 0c0-3.7-2.4-6.5-6.3-6.5-3.8 0-6.3 2.8-6.3 6.5 0 3.8 2.5 6.5 6.3 6.5 3.9 0 6.3-2.7 6.3-6.5Z" fill="url(#g)"/>
+  <path d="M116 9h4.1l4.8 13.6L129.7 9H134l-7.5 20h-3.7L116 9Z" fill="url(#g)"/>
+</svg>

@@ -3,7 +3,7 @@
 // and creation endpoints: POST /finance/invoices, /finance/bills, /finance/sales-orders, /finance/purchase-orders
 
 (function(){
-  const token = localStorage.getItem('flowiq_token');
+  const token = (window.FlowIQ && window.FlowIQ.auth && window.FlowIQ.auth.token && window.FlowIQ.auth.token()) || null;
   if(!token){ window.location.href='/'; return; }
 
   const kRev = document.getElementById('kRev');
@@ -16,11 +16,83 @@
   const tblSales = document.querySelector('#tblSales tbody');
   const tblPurchase = document.querySelector('#tblPurchase tbody');
   const searchInput = document.getElementById('finSearch');
+  const projFilter = document.getElementById('finProjFilter');
 
   const modal = document.getElementById('modalNewDoc');
   const btnNew = document.getElementById('btnNewDoc');
   const docType = document.getElementById('docType');
-  const docNumber = document.getElementById('docNumber');
+  const docRef = document.getElementById('docRef');
+  const tblLine = document.querySelector('#tblLineItems tbody');
+  const btnAddLine = document.getElementById('btnAddLine');
+  const liTotal = document.getElementById('liTotal');
+  let lineItems = [];
+
+  function recomputeLineTotals(){
+    let sum=0;
+    lineItems.forEach(li => {
+      const qty = Number(li.quantity||0);
+      const price = Number(li.unitPrice||0);
+      const tax = Number(li.taxRate||0);
+      li.total = Math.round(qty * price * (1+tax) * 100)/100;
+      sum += li.total;
+    });
+    liTotal.textContent = formatCurrency(sum);
+    if(lineItems.length){
+      docAmount.value = sum.toFixed(2);
+      docAmount.setAttribute('disabled','disabled');
+    } else {
+      docAmount.removeAttribute('disabled');
+    }
+  }
+
+  function renderLineItems(){
+    tblLine.innerHTML='';
+    if(!lineItems.length){
+      const tr=document.createElement('tr');
+      tr.innerHTML='<td colspan="6" style="padding:.6rem;text-align:center;opacity:.6">No line items added.</td>';
+      tblLine.appendChild(tr);
+      recomputeLineTotals();
+      return;
+    }
+    lineItems.forEach((li,idx)=>{
+      const tr=document.createElement('tr');
+      tr.innerHTML=`<td><input class="li-input" data-field="product" value="${escapeHtml(li.product||'')}" placeholder="Product or description" /></td>
+        <td><input class="li-input" type="number" min="0" step="1" data-field="quantity" value="${li.quantity}" style="width:70px" /></td>
+        <td><input class="li-input" type="number" min="0" step="0.01" data-field="unitPrice" value="${li.unitPrice}" style="width:100px" /></td>
+        <td><input class="li-input" type="number" min="0" max="1" step="0.01" data-field="taxRate" value="${li.taxRate}" style="width:70px" /></td>
+        <td class="li-total">${formatCurrency(li.total||0)}</td>
+        <td><button class="table-btn li-remove" data-idx="${idx}">✕</button></td>`;
+      tblLine.appendChild(tr);
+    });
+    tblLine.querySelectorAll('.li-input').forEach(inp=>{
+      inp.addEventListener('input',()=>{
+        const field = inp.getAttribute('data-field');
+        const rowIdx = Array.from(tblLine.children).indexOf(inp.closest('tr'));
+        if(rowIdx>=0){
+          if(['quantity','unitPrice','taxRate'].includes(field)){
+            lineItems[rowIdx][field] = Number(inp.value||0);
+          } else {
+            lineItems[rowIdx][field] = inp.value;
+          }
+          recomputeLineTotals();
+          renderLineItems();
+        }
+      });
+    });
+    tblLine.querySelectorAll('.li-remove').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        const i = Number(btn.getAttribute('data-idx'));
+        lineItems.splice(i,1);
+        renderLineItems();
+      });
+    });
+    recomputeLineTotals();
+  }
+
+  btnAddLine.addEventListener('click',()=>{
+    lineItems.push({ product:'', quantity:1, unitPrice:0, taxRate:0, total:0 });
+    renderLineItems();
+  });
   const docParty = document.getElementById('docParty');
   const docAmount = document.getElementById('docAmount');
   const docDate = document.getElementById('docDate');
@@ -79,6 +151,7 @@
     if(collection==='sales-orders'){
       if(status==='Draft') actions.push({label:'Confirm', action:'confirm'});
       if(status==='Confirmed') actions.push({label:'Mark Paid', action:'paid'});
+      if(status==='Confirmed') actions.push({label:'Create Invoice', action:'convert-invoice', isConvert:true});
     }
     // Purchase Orders: Draft -> Approved -> Paid
     if(collection==='purchase-orders'){
@@ -97,7 +170,10 @@
       const btn = document.createElement('button');
       btn.className='table-btn';
       btn.textContent=a.label;
-      btn.addEventListener('click',()=> transitionStatus(collection,id,a.action));
+      btn.addEventListener('click',()=> {
+        if(a.isConvert){ convertSalesOrder(id); }
+        else transitionStatus(collection,id,a.action);
+      });
       container.appendChild(btn);
     });
     return container;
@@ -112,7 +188,8 @@
 
   async function loadList(endpoint, tbody, collection){
     try {
-      const data = await api.get(endpoint);
+      const queryParts=[]; const proj=projFilter?.value||''; if(proj) queryParts.push('project='+encodeURIComponent(proj));
+      const data = await api.get(endpoint + (queryParts.length? ('?'+queryParts.join('&')):''));
       const items = data.items || data || [];
       const q = (searchInput.value||'').toLowerCase();
       tbody.innerHTML='';
@@ -129,7 +206,13 @@
         actionsCell.appendChild(rowActions(collection, doc._id, doc.status));
         tbody.appendChild(tr);
       });
+      renderGroupSummary(collection, items);
     } catch(e){ console.error('list load error', endpoint, e); }
+  }
+
+  async function convertSalesOrder(id){
+    try{ await api.post(`/finance/sales-orders/${id}/convert-invoice`, {}); await reloadAll(); }
+    catch(e){ console.error('convert failed', e); alert(e.message); }
   }
 
   function escapeHtml(str){ return String(str).replace(/[&<>'"]/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[s])); }
@@ -138,7 +221,15 @@
     await Promise.all([fetchDashboard(), loadInvoices(), loadBills(), loadSales(), loadPurchase()]);
   }
 
+  function renderGroupSummary(collection, items){
+    const map=new Map(); items.forEach(i=>{ const key=i.status||'—'; const entry=map.get(key)||{count:0,total:0}; entry.count++; entry.total+=Number(i.amount||0); map.set(key,entry); });
+    const summary=[...map.entries()].sort((a,b)=> b[1].total - a[1].total).map(([st,info])=> `${st}: ${info.count} (${formatCurrency(info.total)})`).join(' • ');
+    const idMap={ 'invoices':'grpInvoices','vendor-bills':'grpBills','sales-orders':'grpSales','purchase-orders':'grpPurchase' };
+    const elId=idMap[collection]; if(!elId) return; const el=document.getElementById(elId); if(el) el.textContent= summary || '—';
+  }
+
   searchInput.addEventListener('input', () => reloadAll());
+  projFilter.addEventListener('change', ()=> reloadAll());
 
   docCreateBtn.addEventListener('click', async () => {
     const type = docType.value;
@@ -146,6 +237,14 @@
       amount: Number(docAmount.value||0),
       date: docDate.value || new Date().toISOString(),
     };
+    if(lineItems.length){
+      payload.lineItems = lineItems.map(li => ({
+        product: li.product,
+        quantity: Number(li.quantity||0),
+        unitPrice: Number(li.unitPrice||0),
+        taxRate: Number(li.taxRate||0),
+      }));
+    }
     const projectVal = docProject.value || '';
     if(projectVal) payload.project = projectVal;
     // Map party field
@@ -161,7 +260,7 @@
     try {
       await api.post(endpoint, payload);
       closeModal();
-      docNumber.value=''; docParty.value=''; docAmount.value=''; docDate.value=''; docProject.value='';
+      docRef.value=''; docParty.value=''; docAmount.value=''; docDate.value=''; docProject.value=''; lineItems=[]; renderLineItems();
       await reloadAll();
     } catch(e){ console.error('create doc failed', e); alert(e.message); }
   });
@@ -177,5 +276,7 @@
   document.getElementById('navPurchase').addEventListener('click', e=>{ e.preventDefault(); showOnly('secPurchase'); });
 
   showOnly('secInvoices');
-  ensureProjects().then(reloadAll);
+  ensureProjects().then(()=>{ renderLineItems(); reloadAll(); });
+  async function ensureProjectFilter(){ try{ const res= await api.get('/pm/projects'); const list=res.projects||[]; projFilter.innerHTML='<option value="">All Projects</option>'+list.map(p=>`<option value="${p._id}">${escapeHtml(p.name)}</option>`).join(''); }catch{ projFilter.innerHTML='<option value="">All Projects</option>'; } }
+  ensureProjectFilter();
 })();

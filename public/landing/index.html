@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>OrbitOne — Smarter Project Management</title>
+  <meta name="description" content="Project management with dashboards for Admin, PM, Team, and Finance." />
+  <link href="/styles.css" rel="stylesheet" />
+  <style>
+    :root{ --bg:#0b1220; --panel:#0e1626; --card:#121b2c; --text:#e6edf5; --muted:#9aa9bd; --border:#26344a; --grad:linear-gradient(135deg,#4f9fff,#8b5cf6); }
+    body{ margin:0; background:var(--bg); color:var(--text); font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; }
+  .hero{ padding:96px 20px 56px; text-align:center; background: radial-gradient(1300px 520px at 50% -10%, rgba(79,159,255,.22), transparent), radial-gradient(1000px 420px at 10% 10%, rgba(139,92,246,.14), transparent); position:relative; overflow:hidden; }
+  .hero::before{ content:""; position:absolute; inset:-200px; background: radial-gradient(600px 300px at 15% 20%, #4f9fff22, transparent 60%), radial-gradient(700px 320px at 85% 10%, #8b5cf622, transparent 60%); filter: blur(20px); pointer-events:none; animation: floatBg 18s ease-in-out infinite; }
+  @keyframes floatBg { 0%{ transform: translateY(0) rotate(0deg) scale(1);} 50%{ transform: translateY(12px) rotate(2deg) scale(1.03);} 100%{ transform: translateY(0) rotate(0deg) scale(1);} }
+    .container{ max-width:1100px; margin:0 auto; padding:0 16px; }
+    .nav{ display:flex; align-items:center; justify-content:space-between; padding:16px 0; }
+  .brand{ display:flex; align-items:center; gap:.6rem; font-weight:800; letter-spacing:.5px; font-size:1.15rem; }
+  .dot{ width:18px; height:18px; border-radius:50%; position:relative; background:radial-gradient(circle at 40% 40%, #8b5cf6, transparent 60%); box-shadow:0 0 12px #8b5cf6, 0 0 26px #4f9fff66; }
+  .dot::after{ content:""; position:absolute; inset:-4px; border:2px dashed #7ea6ff66; border-radius:50%; animation:orbit 8s linear infinite; }
+  @keyframes orbit{ to { transform: rotate(360deg); } }
+    .nav a{ color:var(--text); text-decoration:none; opacity:.9; margin-left:16px; font-size:.9rem; }
+    .btn{ border:0; border-radius:12px; padding:.7rem 1rem; cursor:pointer; font-weight:600; }
+    .btn-primary{ background:var(--grad); color:#08121f; }
+    .btn-ghost{ background:transparent; border:1px solid var(--border); color:var(--text); }
+    .h1{ font-size: clamp(1.8rem, 4vw, 3rem); line-height:1.1; margin:.4rem auto; max-width:900px; }
+    .sub{ color:var(--muted); max-width:780px; margin:.8rem auto 1.2rem; font-size:1rem; }
+    .cta{ display:flex; gap:.8rem; justify-content:center; flex-wrap:wrap; }
+  .features{ padding:48px 0 28px; }
+  .grid{ display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:1.1rem; }
+  .card{ background:var(--card); border:1px solid var(--border); border-radius:16px; padding:1.05rem; display:grid; gap:.4rem; transition:transform .2s ease, box-shadow .2s ease, border-color .2s ease; }
+  .card:hover{ transform: translateY(-2px); border-color:#3a4e72; box-shadow:0 12px 30px -10px #000a, 0 0 0 1px #ffffff0d inset; }
+    .card h3{ margin:.2rem 0 .2rem; font-size:1.05rem; }
+  .badge{ display:inline-block; padding:.25rem .55rem; border-radius:999px; font-size:.7rem; background:#0f1a2c; color:#9fb6ff; border:1px solid #1c2b47; }
+    .list{ color:var(--muted); font-size:.92rem; }
+    .list li{ margin:.25rem 0; }
+    .logos{ display:flex; gap:1.2rem; justify-content:center; opacity:.8; flex-wrap:wrap; }
+    .logos .logo{ background:#0e1626; border:1px solid var(--border); border-radius:12px; padding:.6rem .9rem; font-weight:600; color:#9fb6ff; }
+    footer{ margin-top:40px; background:var(--panel); border-top:1px solid var(--border); }
+    .footer-grid{ display:grid; grid-template-columns: repeat(auto-fit, minmax(180px,1fr)); gap:1rem; padding:32px 0; }
+    .muted{ color:var(--muted); }
+    .footer-note{ border-top:1px solid var(--border); padding:12px 0; color:var(--muted); font-size:.9rem; }
+    .link{ color:#9fb6ff; text-decoration:none; }
+  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+ </head>
+<body>
+  <div class="container">
+    <div class="nav">
+  <div class="brand">OrbitOne</div>
+      <div>
+        <a href="#features">Features</a>
+  <a href="/analytics-dashboard/">Analytics</a>
+  <a href="/docs/">Docs</a>
+  <a href="/login" class="btn btn-ghost" style="margin-left:12px">Login</a>
+  <a href="/signup" class="btn btn-primary">Get Started</a>
+      </div>
+    </div>
+  </div>
+
+  <header class="hero">
+    <div class="container">
+  <div class="h1">Smarter Project Management</div>
+      <p class="sub">Unified dashboards for Admins, Project Managers, Team Members and Finance. Plan, execute, track timesheets, expenses and billing with real-time analytics.</p>
+      <div class="cta">
+  <a href="/signup" class="btn btn-primary">Get Started</a>
+  <a href="#features" class="btn btn-ghost">See Features</a>
+      </div>
+      <div style="height:28px"></div>
+      <div class="logos">
+        <div class="logo">JWT Auth</div>
+        <div class="logo">MongoDB</div>
+        <div class="logo">Chart.js</div>
+        <div class="logo">Express</div>
+        <div class="logo">Node</div>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <section id="features" class="features">
+      <h2 style="margin:.2rem 0 1rem">Everything you need, in one place</h2>
+      <div class="grid">
+        <div class="card"><span class="badge">Admin</span><h3>🛡️ User & Org Controls</h3><ul class="list"><li>Role-based access</li><li>Company settings</li><li>System analytics</li></ul></div>
+        <div class="card"><span class="badge">Project Manager</span><h3>📦 Projects & Tasks</h3><ul class="list"><li>Kanban boards</li><li>Edit, drag & drop</li><li>Progress & KPIs</li></ul></div>
+        <div class="card"><span class="badge">Team Member</span><h3>✅ My Work</h3><ul class="list"><li>Assigned tasks</li><li>Log timesheets</li><li>Submit expenses</li></ul></div>
+        <div class="card"><span class="badge">Finance</span><h3>💰 Billing & Docs</h3><ul class="list"><li>Invoices & bills</li><li>SO/PO tracking</li><li>Revenue vs Cost</li></ul></div>
+        <div class="card"><span class="badge">Analytics</span><h3>📈 Insights</h3><ul class="list"><li>Utilization</li><li>Completion</li><li>Growth trends</li></ul></div>
+        <div class="card"><span class="badge">AI</span><h3>🤖 Assistant</h3><ul class="list"><li>Summaries</li><li>Suggestions</li><li>Projections</li></ul></div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container footer-grid">
+      <div>
+  <div class="brand" style="margin-bottom:.4rem">OrbitOne</div>
+        <div class="muted">Run projects with clarity. Manage tasks, time, and spend in one place.</div>
+      </div>
+      <div>
+        <div style="font-weight:600;margin-bottom:.4rem">Product</div>
+        <div><a class="link" href="#features">Features</a></div>
+        <div><a class="link" href="/analytics-dashboard/">Analytics</a></div>
+        <div><a class="link" href="/pm-dashboard/">Projects</a></div>
+      </div>
+      <div>
+        <div style="font-weight:600;margin-bottom:.4rem">Company</div>
+  <div><a class="link" href="/settings-dashboard/">Settings</a></div>
+  <div><a class="link" href="/profile/">Profile</a></div>
+      </div>
+      <div>
+        <div style="font-weight:600;margin-bottom:.4rem">Resources</div>
+        <div><a class="link" href="/docs/">Docs</a></div>
+        <div><a class="link" href="#" onclick="event.preventDefault();alert('API coming soon')">API</a></div>
+      </div>
+    </div>
+    <div class="container footer-note">© <span id="yr"></span> OrbitOne. All rights reserved.</div>
+  </footer>
+  <script>document.getElementById('yr').textContent = new Date().getFullYear();</script>
+</body>
+</html>

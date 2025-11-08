@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>OrbitOne — Documentation (Preview)</title>
+  <link href="/assets/css/dashboard.css" rel="stylesheet" />
+  <link href="/styles.css" rel="stylesheet" />
+  <style>
+    body{font-family:Inter,system-ui,sans-serif;padding:2rem;max-width:960px;margin:0 auto;}
+  h1{margin-top:0;font-size:2.2rem;background:linear-gradient(135deg,#4f9fff,#8b5cf6);background-clip:text;-webkit-background-clip:text;color:transparent;}
+    code{background:#111a2b;padding:.2rem .45rem;border-radius:6px;font-size:.85rem;}
+    pre{background:#111a2b;padding:1rem;border-radius:12px;overflow:auto;font-size:.8rem;}
+    nav{display:flex;flex-wrap:wrap;gap:.7rem;margin-bottom:1.2rem;}
+    nav a{background:#121c2a;border:1px solid #2a3b55;color:#9fb6ff;padding:.5rem .75rem;border-radius:10px;font-size:.75rem;text-decoration:none;}
+    nav a:hover{border-color:#4f9fff;color:#fff;}
+  </style>
+</head>
+<body>
+  <h1>OrbitOne Docs <small style="font-size:55%;font-weight:600;color:#9aa9bd">Preview</small></h1>
+  <p>This lightweight documentation hub will expand. For now it lists the key authentication and dashboard endpoints plus environment variables.</p>
+  <nav>
+    <a href="#auth">Auth</a>
+    <a href="#users">Users</a>
+    <a href="#projects">Projects</a>
+    <a href="#finance">Finance</a>
+    <a href="#analytics">Analytics</a>
+  </nav>
+  <section id="auth">
+    <h2>Auth</h2>
+    <ul>
+      <li><code>POST /auth/signup</code></li>
+      <li><code>POST /auth/login</code></li>
+      <li><code>POST /auth/forgot-password</code></li>
+      <li><code>GET /auth/reset/:token</code></li>
+      <li><code>POST /auth/reset/:token</code></li>
+    </ul>
+  </section>
+  <section id="projects">
+    <h2>Projects & Tasks</h2>
+    <ul>
+      <li><code>GET /pm/projects</code></li>
+      <li><code>POST /pm/projects</code></li>
+      <li><code>GET /pm/projects/:id/tasks</code></li>
+      <li><code>POST /pm/projects/:id/tasks</code></li>
+    </ul>
+  </section>
+  <section id="finance">
+    <h2>Finance</h2>
+    <ul>
+      <li><code>GET /finance/summary</code></li>
+      <li><code>POST /finance/invoices</code></li>
+      <li><code>POST /finance/bills</code></li>
+    </ul>
+  </section>
+  <section id="analytics">
+    <h2>Analytics</h2>
+    <ul>
+      <li><code>GET /analytics/overview</code></li>
+    </ul>
+  </section>
+  <p style="margin-top:2rem;color:#9aa9bd">More documentation coming soon. Return to <a href="/">Landing Page</a>.</p>
+</body>
+</html>

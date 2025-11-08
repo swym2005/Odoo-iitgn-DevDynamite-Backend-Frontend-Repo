@@ -9,13 +9,29 @@
   const roles = [ 'Admin', 'Project Manager', 'Team Member', 'Finance' ];
 
   function saveAuth(token, user){
-    localStorage.setItem('flowiq_token', token);
-    localStorage.setItem('flowiq_user', JSON.stringify(user));
+    // Save under new keys and mirror to legacy for backward compatibility
+    try{
+      localStorage.setItem('orbitone_token', token);
+      localStorage.setItem('orbitone_user', JSON.stringify(user));
+      localStorage.setItem('flowiq_token', token);
+      localStorage.setItem('flowiq_user', JSON.stringify(user));
+    }catch{}
   }
-  function getToken(){ return localStorage.getItem('flowiq_token'); }
+  function getToken(){ return localStorage.getItem('orbitone_token') || localStorage.getItem('flowiq_token'); }
 
   function AuthApp(){
-    const [tab, setTab] = useState('login');
+    // Initialize tab from query or path (supports /signup deep link)
+    const initialTab = (() => {
+      try{
+        const qp = new URLSearchParams(window.location.search);
+        const fromQuery = (qp.get('tab')||'').toLowerCase();
+        if(fromQuery === 'signup') return 'signup';
+        const path = (window.location.pathname||'').toLowerCase();
+        if(path === '/signup') return 'signup';
+      }catch{}
+      return 'login';
+    })();
+    const [tab, setTab] = useState(initialTab);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
@@ -74,7 +90,7 @@
             React.createElement('div', { className:'card-header' }, [
               React.createElement('div', { className:'brand' }, [
                 React.createElement('div', { className:'dot' }),
-                React.createElement('span', null, 'FlowIQ')
+                React.createElement('span', null, 'OrbitOne')
               ]),
               // Fix tabs rendering: map over both entries instead of leaving the first as raw array (which rendered as "loginLogin")
               React.createElement('div', { className:'tabs' },
@@ -110,7 +126,7 @@
               error && React.createElement('div', { className:'error' }, error),
               success && React.createElement('div', { className:'success' }, success),
               React.createElement('button', { type:'submit', disabled: loading || (tab==='signup' ? (!name.trim() || !email.trim() || password.length < 6) : (!email.trim() || !password.length)) , className:'btn btn-primary' }, loading ? 'Please wait…' : (tab==='login'?'Login':'Create Account')),
-              React.createElement('div', { className:'footer-note' }, 'Smarter Project Management — Powered by AI')
+              React.createElement('div', { className:'footer-note' }, 'Smarter Project Management')
             ])
           ])
         )
@@ -129,7 +145,7 @@
             React.createElement('span', null, 'AI Enhanced')
           ]),
           React.createElement('div', { className:'h1' }, 'Smarter Project Management — Powered by AI'),
-          React.createElement('p', { className:'sub' }, 'Intelligent dashboards, automated timesheets, predictive expense tracking and more. FlowIQ elevates your team performance.')
+          React.createElement('p', { className:'sub' }, 'Intelligent dashboards, automated timesheets, predictive expense tracking and more. OrbitOne elevates your team performance.')
         ])
       ])
     );

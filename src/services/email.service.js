@@ -23,7 +23,7 @@ const getTransporter = () => {
 };
 
 export const sendEmail = async ({ to, subject, html }) => {
-  const from = process.env.EMAIL_FROM || 'FlowIQ <no-reply@local>'; 
+  const from = process.env.EMAIL_FROM || 'OrbitOne <no-reply@local>'; 
   const t = getTransporter();
   if (!t) {
     console.log('[EMAIL:DEV]', { from, to, subject, html });

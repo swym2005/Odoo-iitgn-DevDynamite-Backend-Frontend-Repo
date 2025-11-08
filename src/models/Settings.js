@@ -11,7 +11,7 @@ const hourlyRatesSchema = new mongoose.Schema(
 
 const settingsSchema = new mongoose.Schema(
   {
-    companyName: { type: String, default: 'FlowIQ' },
+  companyName: { type: String, default: 'OrbitOne' },
     logoUrl: { type: String },
     gstNumber: { type: String },
     address: { type: String },

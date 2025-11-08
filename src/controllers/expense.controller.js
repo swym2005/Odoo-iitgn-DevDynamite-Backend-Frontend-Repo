@@ -2,7 +2,7 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import { expenseCreateSchema, expenseReimburseSchema } from '../validators/expense.validators.js';
-import { createExpense, listExpenses, setStatus, reimburse, dashboardKPIs, expensesByProject } from '../services/expense.service.js';
+import { createExpense, listExpenses, setStatus, reimburse, dashboardKPIs, expensesByProject, maybeAttachToInvoice } from '../services/expense.service.js';
 import { createNotification } from '../services/notifications.service.js';
 import { Roles } from '../utils/roles.js';
 
@@ -49,6 +49,10 @@ export const expensesPost = async (req, res, next) => {
 export const expenseApprove = async (req, res, next) => {
   try {
     const exp = await setStatus(req.params.id, 'approved');
+    // If billable, attach to (or create) draft invoice
+    if (exp.billable) {
+      try { await maybeAttachToInvoice(exp); } catch (attachErr) { console.error('Invoice attach failed', attachErr); }
+    }
     // Notify submitter
     await createNotification({
       user: exp.submittedBy,

@@ -102,15 +102,19 @@ export const overviewAnalytics = async (user, { from, to, project, role } = {}) 
     }));
 
   // KPIs
-  const [revAgg, billAgg, expAgg, hoursAgg] = await Promise.all([
+  const [revAgg, billAgg, expAgg, hoursAgg, billableAgg, nonBillableAgg] = await Promise.all([
     CustomerInvoice.aggregate([{ $match: { status: 'Paid', ...projectMatch, ...dateMatch(from, to, 'date') } }, { $group: { _id: null, total: { $sum: '$amount' } } }]),
     VendorBill.aggregate([{ $match: { status: 'Paid', ...projectMatch, ...dateMatch(from, to, 'date') } }, { $group: { _id: null, total: { $sum: '$amount' } } }]),
     Expense.aggregate([{ $match: { status: 'approved', ...projectMatch, ...dateMatch(from, to, 'createdAt') } }, { $group: { _id: null, total: { $sum: '$amount' } } }]),
     Timesheet.aggregate([{ $match: tsMatch }, { $group: { _id: null, hours: { $sum: '$hours' } } }]),
+    Timesheet.aggregate([{ $match: { ...tsMatch, billable: true } }, { $group: { _id: null, hours: { $sum: '$hours' } } }]),
+    Timesheet.aggregate([{ $match: { ...tsMatch, billable: false } }, { $group: { _id: null, hours: { $sum: '$hours' } } }]),
   ]);
   const revenue = revAgg[0]?.total || 0;
   const cost = (billAgg[0]?.total || 0) + (expAgg[0]?.total || 0);
   const hoursLogged = hoursAgg[0]?.hours || 0;
+  const hoursBillable = billableAgg[0]?.hours || 0;
+  const hoursNonBillable = nonBillableAgg[0]?.hours || 0;
   const avgProfitMargin = revenue ? (revenue - cost) / revenue : 0;
   const expenseRatio = revenue ? (expAgg[0]?.total || 0) / revenue : 0;
 
@@ -122,7 +126,7 @@ export const overviewAnalytics = async (user, { from, to, project, role } = {}) 
       utilization,
     },
     filters: { from, to, project, role },
-    kpis: { totalRevenue: revenue, avgProfitMargin, hoursLogged, expenseRatio },
+    kpis: { totalRevenue: revenue, avgProfitMargin, hoursLogged, hoursBillable, hoursNonBillable, expenseRatio },
   };
 };
 

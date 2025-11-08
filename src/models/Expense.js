@@ -11,6 +11,10 @@ const expenseSchema = new mongoose.Schema(
     receiptUrl: { type: String },
     reimbursed: { type: Boolean, default: false },
     reimbursedAt: { type: Date },
+    // Billing linkage
+    billed: { type: Boolean, default: false, index: true },
+    billedAt: { type: Date },
+    invoice: { type: mongoose.Schema.Types.ObjectId, ref: 'CustomerInvoice' },
   },
   { timestamps: true }
 );

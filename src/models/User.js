@@ -28,6 +28,8 @@ const userSchema = new mongoose.Schema(
         push: { type: Boolean, default: true },
       },
     },
+    // Hourly rate for timesheet cost calculations (company cost basis)
+    hourlyRate: { type: Number, default: 0, min: 0 },
   },
   { timestamps: true }
 );

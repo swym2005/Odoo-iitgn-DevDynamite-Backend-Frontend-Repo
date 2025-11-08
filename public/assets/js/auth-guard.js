@@ -1,12 +1,35 @@
 (function(){
-  const token = localStorage.getItem('flowiq_token');
-  const userRaw = localStorage.getItem('flowiq_user');
+  // Backward + forward compatible storage keys (FlowIQ → OrbitOne)
+  const get = (k) => localStorage.getItem(k);
+  const token = get('orbitone_token') || get('flowiq_token');
+  const userRaw = get('orbitone_user') || get('flowiq_user');
   let user = null;
   try{ user = JSON.parse(userRaw||'null'); }catch(e){ user=null; }
-  function logout(){ localStorage.removeItem('flowiq_token'); localStorage.removeItem('flowiq_user'); window.location.href='/'; }
+
+  function setKeys(tok, usr){
+    try{
+      if(tok) localStorage.setItem('orbitone_token', tok);
+      if(usr) localStorage.setItem('orbitone_user', typeof usr==='string'? usr : JSON.stringify(usr));
+    }catch{}
+  }
+  // If found legacy keys but not new, mirror to new ones
+  if(token && !get('orbitone_token')){ setKeys(token, userRaw); }
+
+  function logout(){
+    ['orbitone_token','orbitone_user','flowiq_token','flowiq_user'].forEach(k=> localStorage.removeItem(k));
+    window.location.href='/login';
+  }
   window.FlowIQ = window.FlowIQ || {}; window.FlowIQ.auth = Object.assign(window.FlowIQ.auth||{}, { logout });
+
+  // Allow public routes without token
+  const path = window.location.pathname;
+  const publicPaths = ['/', '/login', '/docs'];
+  if(publicPaths.includes(path)) return;
+
+  // Enforce auth for app pages
   if(!token || !user){ logout(); return; }
-  // Simple role-to-path enforcement (prefix match)
+
+  // Role → dashboard prefix
   const roleMap = {
     'Admin': '/admin-dashboard',
     'Project Manager': '/pm-dashboard',
@@ -14,26 +37,21 @@
     'Finance': '/finance-dashboard'
   };
   const expectedPrefix = roleMap[user.role];
-  if(expectedPrefix && window.location.pathname.startsWith('/') && window.location.pathname.startsWith(expectedPrefix) === false){
-    // Allow visiting other supporting pages (tasks, timesheets, etc.) for PM/Admin; skip strict redirect for shared pages
-    if(['Project Manager','Admin'].includes(user.role) && (
-      window.location.pathname.startsWith('/tasks') ||
-      window.location.pathname.startsWith('/timesheets-ui') ||
-      window.location.pathname.startsWith('/expenses-dashboard') ||
-      window.location.pathname.startsWith('/billing-dashboard') ||
-      window.location.pathname.startsWith('/analytics-dashboard') ||
-      window.location.pathname.startsWith('/project-detail')
-    )){
-      return; // allowed area
-    }
-    // Team Member allowed tasks & timesheets view
-    if(user.role==='Team Member' && (window.location.pathname.startsWith('/tasks') || window.location.pathname.startsWith('/timesheets-ui'))){
-      return;
-    }
-    // Finance allowed billing & analytics
-    if(user.role==='Finance' && (window.location.pathname.startsWith('/billing-dashboard') || window.location.pathname.startsWith('/analytics-dashboard'))){
-      return;
-    }
-    window.location.replace(expectedPrefix + '/');
+  if(!expectedPrefix) return; // unknown role, skip
+
+  // Allowed cross-sections by role
+  const allow = {
+    'Admin': ['/admin-dashboard','/pm-dashboard','/team-dashboard','/finance-dashboard','/tasks','/timesheets-ui','/expenses-dashboard','/analytics-dashboard','/profile','/settings-dashboard'],
+    'Project Manager': ['/pm-dashboard','/tasks','/timesheets-ui','/expenses-dashboard','/analytics-dashboard','/project-detail','/profile'],
+    'Team Member': ['/team-dashboard','/tasks','/timesheets-ui','/profile'],
+    'Finance': ['/finance-dashboard','/analytics-dashboard','/profile']
+  };
+  const allowed = allow[user.role] || [expectedPrefix];
+
+  const isAllowed = allowed.some(p => path.startsWith(p));
+  if(!isAllowed){
+    // Redirect to role home
+    const dest = expectedPrefix.endsWith('/')? expectedPrefix : expectedPrefix + '/';
+    window.location.replace(dest);
   }
 })();

@@ -28,20 +28,7 @@ app.use('/uploads', express.static(path.resolve('uploads')));
 // Serve frontend static assets (public folder)
 const publicDir = path.resolve('public');
 // Static with explicit cache headers to avoid stale UI
-app.use(express.static(publicDir, {
-  etag: false,
-  lastModified: false,
-  setHeaders: (res, filePath) => {
-    if (filePath.endsWith('.html')) {
-      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-      res.setHeader('Pragma', 'no-cache');
-      res.setHeader('Expires', '0');
-    } else if (filePath.endsWith('.js') || filePath.endsWith('.css')) {
-      // allow very short caching for assets
-      res.setHeader('Cache-Control', 'public, max-age=60');
-    }
-  }
-}));
+// NOTE: Mount API routes and explicit pages first, then static, so '/' and '/login' are served by our handlers
 
 app.use('/auth', authRoutes);
 app.use('/admin', adminRoutes);
@@ -57,10 +44,36 @@ app.use('/ui', uiRoutes);
 app.use('/search', searchRoutes);
 app.use('/team', teamRoutes);
 
-// Fallback root to index.html (frontend entry)
+// Root now serves marketing landing page
 app.get('/', (req, res) => {
+  res.sendFile(path.join(publicDir, 'landing', 'index.html'));
+});
+
+// Explicit login route serves previous auth index
+app.get('/login', (req, res) => {
   res.sendFile(path.join(publicDir, 'index.html'));
 });
+
+// Signup route serves same auth index but allows deep-linking to signup tab
+app.get('/signup', (req, res) => {
+  res.sendFile(path.join(publicDir, 'index.html'));
+});
+
+// Finally, serve the rest of the static frontend (dashboards, assets, etc.)
+app.use(express.static(publicDir, {
+  etag: false,
+  lastModified: false,
+  // Keep short caching for assets; html no-cache
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+    } else if (filePath.endsWith('.js') || filePath.endsWith('.css')) {
+      res.setHeader('Cache-Control', 'public, max-age=60');
+    }
+  }
+}));
 
 app.use(notFound);
 app.use(errorHandler);

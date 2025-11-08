@@ -8,7 +8,7 @@ import { overviewAnalytics, projectAnalytics } from './analytics.service.js';
 import mongoose from 'mongoose';
 
 // Placeholder Gemini integration wrapper (user can plug real SDK later)
-const callGemini = async (prompt, system = 'You are FlowIQ AI assistant.') => {
+const callGemini = async (prompt, system = 'You are OrbitOne AI assistant.') => {
   if (!process.env.GEMINI_API_KEY) {
     return `*(Simulated AI)* ${prompt.substring(0,120)}...`; // fallback stub
   }

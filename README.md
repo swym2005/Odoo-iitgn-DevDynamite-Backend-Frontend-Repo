@@ -1,9 +1,9 @@
 <<<<<<< HEAD
 # Odoo-iitgn-backend-frontend-temp-repo
 =======
-# FlowIQ Auth Backend (MERN - Express + MongoDB)
+# OrbitOne Auth Backend (MERN - Express + MongoDB)
 
-Implements authentication flows for FlowIQ: signup, login with role-based redirect, forgot password, password reset. Designed to pair with a split-screen UI and minimal forgot password page.
+Implements authentication flows for OrbitOne: signup, login with role-based redirect, forgot password, password reset. Designed to pair with a split-screen UI and minimal forgot password page.
 
 ## Tech Stack
 - Node.js / Express
@@ -18,9 +18,9 @@ Implements authentication flows for FlowIQ: signup, login with role-based redire
 Copy `.env.example` to `.env` and fill values:
 ```
 PORT=5000
-MONGO_URI=mongodb://127.0.0.1:27017/flowiq_auth
+MONGO_URI=mongodb://127.0.0.1:27017/orbitone_auth
 JWT_SECRET=your_long_random_secret
-EMAIL_FROM="FlowIQ <no-reply@flowiq.example>"
+EMAIL_FROM="OrbitOne <no-reply@orbitone.example>"
 SMTP_HOST=
 SMTP_PORT=587
 SMTP_USER=

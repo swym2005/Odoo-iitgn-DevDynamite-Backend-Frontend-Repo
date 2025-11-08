@@ -50,7 +50,7 @@ export const createResetTokenService = async ({ email, appBaseUrl }) => {
   const resetLink = `${appBaseUrl || process.env.APP_BASE_URL || 'http://localhost:3000'}/reset/${token}`;
   await sendEmail({
     to: user.email,
-    subject: 'FlowIQ Password Reset',
+    subject: 'OrbitOne Password Reset',
     html: `<p>Hello ${user.name || ''},</p><p>Click the link below to reset your password. This link expires in 1 hour.</p><p><a href="${resetLink}">${resetLink}</a></p>`
   });
   return { status: 'ok' };

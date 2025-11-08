@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>OrbitOne — Projects</title>
+  <link href="/assets/css/dashboard.css" rel="stylesheet" />
+  <link href="/styles.css" rel="stylesheet" />
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">OrbitOne</div>
+      <nav class="nav">
+        <a class="nav-item" href="/landing/">← Landing</a>
+        <a class="nav-item" href="/pm-dashboard/">PM Dashboard</a>
+      </nav>
+    </aside>
+    <main>
+      <div class="topbar">
+        <div class="search" style="gap:.5rem;display:flex;align-items:center">
+          <input id="qSearch" placeholder="Search projects by name/client..." />
+          <select id="qStatus">
+            <option value="">All statuses</option>
+            <option value="planning">Planning</option>
+            <option value="active">Active</option>
+            <option value="on-hold">On Hold</option>
+            <option value="completed">Completed</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+        </div>
+        <div class="space-between" style="gap:.6rem">
+          <a href="/login" class="button-outline">Login</a>
+        </div>
+      </div>
+
+      <section class="kpis" id="kpiWrap" style="margin: .5rem 1rem 0"></section>
+
+      <div class="content">
+        <div id="cards" style="display:grid;grid-template-columns: repeat(auto-fill, minmax(260px,1fr)); gap:.8rem"></div>
+      </div>
+    </main>
+  </div>
+
+  <script src="/assets/js/common.js"></script>
+  <script src="/landing/projects.js?v=1"></script>
+</body>
+</html>

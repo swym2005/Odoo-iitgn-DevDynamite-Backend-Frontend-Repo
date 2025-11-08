@@ -1,7 +1,7 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>FlowIQ — Finance Dashboard</title><link href="/assets/css/dashboard.css" rel="stylesheet"/><link href="/styles.css" rel="stylesheet"/></head><body>
+<!doctype html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>OrbitOne — Finance Dashboard</title><link href="/assets/css/dashboard.css" rel="stylesheet"/><link href="/styles.css" rel="stylesheet"/></head><body>
 <div class="layout">
 	<aside class="sidebar">
-		<div class="brand"><span class="logo-dot"></span><span>FlowIQ Finance</span></div>
+		<div class="brand">OrbitOne</div>
 		<nav class="nav">
 			<a class="nav-item active" href="#" data-roles="Finance,Admin"><span>Dashboard</span></a>
 			<a class="nav-item" href="#" id="navInvoices" data-roles="Finance,Admin"><span>Invoices</span></a>
@@ -14,7 +14,8 @@
 	<main>
 		<div class="topbar">
 			<div class="search"><input placeholder="Search documents..." id="finSearch"/></div>
-			<div class="space-between" style="gap:.6rem">
+			<div class="space-between" style="gap:.6rem;align-items:center">
+				<select id="finProjFilter" class="button-outline" style="padding:.55rem .7rem;border-radius:8px"></select>
 				<a href="/" class="button-outline">Logout</a>
 				<button class="button-primary" id="btnNewDoc" data-roles="Finance,Admin">+ New</button>
 			</div>
@@ -27,19 +28,19 @@
 				<div class="kpi"><h3>Margin %</h3><div class="value" id="kMargin">—</div></div>
 			</section>
 			<section class="table-card" id="secInvoices">
-				<h2>Customer Invoices</h2>
+				<div class="space-between"><h2>Customer Invoices</h2><div id="grpInvoices" class="muted" style="font-size:.85rem"></div></div>
 				<div class="table-wrap"><table class="table" id="tblInvoices"><thead><tr><th>Number</th><th>Customer</th><th>Amount</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead><tbody></tbody></table></div>
 			</section>
 			<section class="table-card" id="secBills" style="margin-top:1rem">
-				<h2>Vendor Bills</h2>
+				<div class="space-between"><h2>Vendor Bills</h2><div id="grpBills" class="muted" style="font-size:.85rem"></div></div>
 				<div class="table-wrap"><table class="table" id="tblBills"><thead><tr><th>Number</th><th>Vendor</th><th>Amount</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead><tbody></tbody></table></div>
 			</section>
 			<section class="table-card" id="secSales" style="margin-top:1rem">
-				<h2>Sales Orders</h2>
+				<div class="space-between"><h2>Sales Orders</h2><div id="grpSales" class="muted" style="font-size:.85rem"></div></div>
 				<div class="table-wrap"><table class="table" id="tblSales"><thead><tr><th>Number</th><th>Customer</th><th>Amount</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead><tbody></tbody></table></div>
 			</section>
 			<section class="table-card" id="secPurchase" style="margin-top:1rem">
-				<h2>Purchase Orders</h2>
+				<div class="space-between"><h2>Purchase Orders</h2><div id="grpPurchase" class="muted" style="font-size:.85rem"></div></div>
 				<div class="table-wrap"><table class="table" id="tblPurchase"><thead><tr><th>Number</th><th>Vendor</th><th>Amount</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead><tbody></tbody></table></div>
 			</section>
 		</div>
@@ -50,7 +51,7 @@
 <div class="modal-backdrop hidden" id="modalNewDoc">
 	<div class="modal" style="width:min(760px,92vw)">
 		<h3>Create Financial Document</h3>
-		<div class="form-grid">
+			<div class="form-grid">
 			<label>Type</label>
 			<select id="docType">
 				<option value="invoice">Customer Invoice</option>
@@ -58,11 +59,36 @@
 				<option value="sales">Sales Order</option>
 				<option value="purchase">Purchase Order</option>
 			</select>
-			<label>Number / Ref</label><input id="docNumber" />
+				<label>Reference (optional)</label><input id="docRef" />
 			<label>Party (Customer/Vendor)</label><input id="docParty" />
 			<div class="flex"><div style="flex:1"><label>Amount</label><input id="docAmount" type="number" step="0.01" /></div><div style="flex:1"><label>Date</label><input id="docDate" type="date" /></div></div>
 			<label>Project (optional)</label><select id="docProject"></select>
 		</div>
+			<div class="table-card" style="margin-top:.75rem">
+				<div class="space-between" style="align-items:center">
+					<h4 style="margin:.2rem 0">Line Items (optional)</h4>
+					<button class="button-outline" id="btnAddLine">+ Add Item</button>
+				</div>
+				<div class="table-wrap" style="max-height:35vh;overflow:auto">
+					<table class="table" id="tblLineItems">
+						<thead>
+							<tr>
+								<th style="width:36%">Product / Description</th>
+								<th style="width:12%">Qty</th>
+								<th style="width:16%">Unit Price</th>
+								<th style="width:12%">Tax %</th>
+								<th style="width:16%">Total</th>
+								<th style="width:8%">Remove</th>
+							</tr>
+						</thead>
+						<tbody></tbody>
+					</table>
+				</div>
+				<div class="space-between" style="margin-top:.5rem">
+					<small style="opacity:.75">If line items are added, Amount will auto-calculate.</small>
+					<div><strong>Computed Total: </strong><span id="liTotal">$0.00</span></div>
+				</div>
+			</div>
 		<div class="space-between" style="margin-top:1rem"><button class="button-outline" data-close>Cancel</button><button class="button-primary" id="docCreateBtn">Create</button></div>
 	</div>
 </div>

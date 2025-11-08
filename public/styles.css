@@ -1,4 +1,4 @@
-/* FlowIQ Futuristic Auth UI */
+/* OrbitOne Futuristic Auth UI */
 :root{
   --bg1:#0f1020; /* deep space */
   --bg2:#0a0b15;
@@ -61,7 +61,7 @@ body{
   backdrop-filter: blur(12px);
 }
 .card-header{ display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem; }
-.brand{ display:flex; align-items:center; gap:.8rem; font-weight:800; letter-spacing:.5px; }
+.brand{ display:flex; align-items:center; gap:.8rem; font-weight:800; letter-spacing:.5px; background:linear-gradient(90deg,#6ee7ff,#60a5fa 40%,#a855f7); -webkit-background-clip:text; background-clip:text; color:transparent; }
 .brand .dot{ width:12px; height:12px; border-radius:50%; background:radial-gradient(circle at 40% 40%, var(--neon), transparent 70%); box-shadow:0 0 12px var(--neon), 0 0 24px #00eaff44; }
 .tabs{ display:flex; gap:.5rem; background:#0b0f22; border:1px solid #1a224a; padding:.35rem; border-radius:999px; }
 .tab{ cursor:pointer; user-select:none; padding:.5rem 1rem; border-radius:999px; color:var(--muted); font-weight:600; }

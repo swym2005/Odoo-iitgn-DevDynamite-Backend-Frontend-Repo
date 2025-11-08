@@ -1,11 +1,43 @@
 (function(){
   const { api, ui } = window.FlowIQ;
-  const tbody = () => document.querySelector('#tblProjects tbody');
+  const cardsList = () => document.getElementById('cardsList');
   let selected=null;
 
+  function escapeHtml(str){ return String(str||'').replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[s])); }
+
+  function projectCardMarkup(p){
+  const profitPct = p.revenue? (((p.revenue||0)-(p.cost||0))/(p.revenue||1)*100).toFixed(1):'--';
+  const progress = p.progress!=null? p.progress : 0;
+  const budget = Number(p.budget||0);
+  const cost = Number(p.cost||0);
+  const usage = budget>0 ? Math.min(100, Math.round(cost/budget*100)) : 0;
+    return `
+      <div class="project-card" data-id="${p._id}">
+        <div class="thumb">🗂️</div>
+        <div class="row"><span class="title">${escapeHtml(p.name)}</span><span class="status-chip">${escapeHtml(p.status)}</span></div>
+        <div class="meta">
+          <div class="row"><span>Client</span><span>${escapeHtml(p.client||'—')}</span></div>
+          <div class="row"><span>Budget</span><span>₹ ${(p.budget||0).toLocaleString()}</span></div>
+          <div class="row"><span>Profit</span><span>${profitPct==='--'?'--': profitPct+'%'}</span></div>
+          <div class="row"><span>Deadline</span><span>${p.deadline? new Date(p.deadline).toISOString().slice(0,10): '—'}</span></div>
+        </div>
+  <div class="progress"><span style="width:${progress}%"></span></div>
+  <div class="progress budget" title="Budget used: ${usage}%"><span style="width:${usage}%"></span></div>
+        <div class="actions">
+          <a class="button-outline btn-view" href="/project-detail/?id=${p._id}">View</a>
+          <a class="button-outline btn-tasks" href="/tasks/?projectId=${p._id}">Tasks</a>
+        </div>
+      </div>`;
+  }
+
   async function loadProjects(){
-    const res = await api.get('/pm/projects');
-    return res.projects || [];
+    try{
+      const res = await api.get('/pm/projects');
+      return res.projects || [];
+    }catch(e){
+      console.warn('Projects load failed', e);
+      return [];
+    }
   }
 
   async function loadKPIs(){
@@ -27,21 +59,29 @@
   }
 
   function render(list){
-    tbody().innerHTML='';
+    const wrap = cardsList();
+    if(!wrap) return;
+    wrap.innerHTML='';
     if(!Array.isArray(list) || list.length===0){
-      const tr=document.createElement('tr');
-      tr.innerHTML="<td colspan='7' style='padding:1.2rem;text-align:center;opacity:.6'>No projects found for your scope. If you just added projects, ensure the backend restarted (nodemon) and your role is 'Project Manager'.</td>";
-      tbody().appendChild(tr);
+      const empty=document.createElement('div');
+      empty.style.cssText='padding:1rem;opacity:.7';
+      empty.textContent='No projects found for your scope.';
+      wrap.appendChild(empty);
       return;
     }
-    list.forEach(p=>{
-      const tr=document.createElement('tr');
-      tr.innerHTML=`<td>${p.name}</td><td>${p.client||''}</td><td>${p.status}</td><td>₹ ${(p.budget||0).toLocaleString()}</td><td>${p.revenue? ((p.revenue-p.cost)/p.revenue*100).toFixed(1)+'%':'--'}</td><td>${p.deadline? new Date(p.deadline).toISOString().slice(0,10):''}</td><td><button class='table-btn btn-select' data-id='${p._id}'>Select</button></td>`;
-  tr.addEventListener('click',()=>{ selected=p; document.querySelectorAll('#tblProjects tbody tr').forEach(r=>r.classList.remove('row-selected')); tr.classList.add('row-selected'); updateHoursForSelected(); });
-      tbody().appendChild(tr);
+    list.forEach(p=>{ wrap.insertAdjacentHTML('beforeend', projectCardMarkup(p)); });
+    // bind selection on cards
+    wrap.querySelectorAll('.project-card').forEach(card=>{
+      card.addEventListener('click',()=>{
+        const id = card.getAttribute('data-id');
+        const proj = list.find(x=> String(x._id)===String(id));
+        if(!proj) return;
+        selected=proj;
+        wrap.querySelectorAll('.project-card').forEach(c=> c.classList.remove('selected'));
+        card.classList.add('selected');
+        updateHoursForSelected();
+      });
     });
-    // bind select buttons
-  document.querySelectorAll('.btn-select').forEach(btn=> btn.addEventListener('click',e=>{ e.stopPropagation(); const id=btn.dataset.id; const proj=list.find(x=> String(x._id)===id); if(proj){ selected=proj; document.querySelectorAll('#tblProjects tbody tr').forEach(r=>r.classList.remove('row-selected')); btn.closest('tr').classList.add('row-selected'); updateHoursForSelected(); } }));
   }
 
   function buildProjectKanban(projects){
@@ -67,31 +107,27 @@
       });
       projects.filter(p=>p.status===st).forEach(p=>{
         const card=document.createElement('div');
-        card.className='proj-card';
-        card.style.cssText='background:#182335;border:1px solid #26344a;border-radius:12px;padding:.6rem .65rem;font-size:.68rem;display:grid;gap:.3rem;cursor:pointer;';
+        card.className='project-card';
+        card.style.cursor='grab';
         card.setAttribute('draggable','true');
         card.addEventListener('dragstart',e=>{ e.dataTransfer.setData('text/plain', p._id); });
-        const profit = p.revenue? ((p.revenue-p.cost)/p.revenue*100).toFixed(1)+'%':'--';
-        card.innerHTML=`<div style='font-weight:600;font-size:.72rem'>${p.name}</div>
-          <div style='display:flex;justify-content:space-between;gap:.4rem'>
-            <span style='opacity:.7'>Client:</span><span>${p.client||'—'}</span>
+  const profitPct = p.revenue? (((p.revenue||0)-(p.cost||0))/(p.revenue||1)*100).toFixed(1):'--';
+  const progress = p.progress!=null? p.progress : 0;
+  const budget = Number(p.budget||0);
+  const cost = Number(p.cost||0);
+  const usage = budget>0 ? Math.min(100, Math.round(cost/budget*100)) : 0;
+        card.innerHTML=`
+          <div class="row"><span class="title">${escapeHtml(p.name)}</span><span class="status-chip">${escapeHtml(p.status)}</span></div>
+          <div class="meta">
+            <div class="row"><span>Client</span><span>${escapeHtml(p.client||'—')}</span></div>
+            <div class="row"><span>Budget</span><span>₹ ${(p.budget||0).toLocaleString()}</span></div>
+            <div class="row"><span>Profit</span><span>${profitPct==='--'?'--': profitPct+'%'}</span></div>
+            <div class="row"><span>Deadline</span><span>${p.deadline? new Date(p.deadline).toISOString().slice(0,10):'—'}</span></div>
           </div>
-          <div style='display:flex;justify-content:space-between;gap:.4rem'>
-            <span style='opacity:.7'>Budget:</span><span>₹ ${(p.budget||0).toLocaleString()}</span>
-          </div>
-          <div style='display:flex;justify-content:space-between;gap:.4rem'>
-            <span style='opacity:.7'>Profit:</span><span>${profit}</span>
-          </div>
-          <div style='display:flex;justify-content:space-between;gap:.4rem'>
-            <span style='opacity:.7'>Deadline:</span><span>${p.deadline? new Date(p.deadline).toISOString().slice(0,10):'—'}</span>
-          </div>`;
-        card.addEventListener('click',()=>{
-          selected=p;
-          updateHoursForSelected();
-          // highlight selection (optional visual)
-          document.querySelectorAll('.proj-card').forEach(c=> c.style.outline='none');
-          card.style.outline='2px solid #4f9fff55';
-        });
+          <div class="progress"><span style="width:${progress}%"></span></div>
+          <div class="progress budget" title="Budget used: ${usage}%"><span style="width:${usage}%"></span></div>
+        `;
+        card.addEventListener('click',()=>{ selected=p; updateHoursForSelected(); wrap.querySelectorAll('.project-card').forEach(c=> c.classList.remove('selected')); card.classList.add('selected'); });
         wrap.appendChild(card);
       });
       col.appendChild(wrap);
@@ -99,18 +135,54 @@
     });
   }
 
-  function charts(){ api.get('/pm/analytics').then(res=>{ if(!window.Chart) return; const cvr=document.getElementById('chartCvR'); const util=document.getElementById('chartUtil'); const cvrLabels=res.projectProgress.map(p=>p.name); const costData=res.costVsRevenue.map(x=>x.cost); const revData=res.costVsRevenue.map(x=>x.revenue); new Chart(cvr,{ type:'line', data:{ labels:cvrLabels, datasets:[{ label:'Cost', data:costData, borderColor:'#ef4444', backgroundColor:'#ef444433' },{ label:'Revenue', data:revData, borderColor:'#10b981', backgroundColor:'#10b98133' }] }, options:{ plugins:{legend:{labels:{color:'#e6edf5'}}}, scales:{x:{ticks:{color:'#9aa9bd'}},y:{ticks:{color:'#9aa9bd'}}}} }); const utilLabels=res.utilization.map(u=>u.userId); const utilData=res.utilization.map(u=> Math.round(u.utilization*100)); new Chart(util,{ type:'bar', data:{ labels:utilLabels, datasets:[{ label:'Utilization %', data:utilData, backgroundColor:'#4f9fff55', borderColor:'#4f9fff' }] }, options:{ plugins:{legend:{labels:{color:'#e6edf5'}}}, scales:{x:{ticks:{color:'#9aa9bd'}},y:{ticks:{color:'#9aa9bd'}}}} }); }).catch(()=>{}); }
+  // Dynamic analytics charts (update without recreating canvases repeatedly)
+  let costRevChart=null, utilChart=null, analyticsTimer=null;
+  async function loadAnalytics(){
+    try{
+      const res = await api.get('/pm/analytics');
+      if(!window.Chart) return;
+      const cvr=document.getElementById('chartCvR');
+      const util=document.getElementById('chartUtil');
+      // Ensure consistent ordering using costVsRevenue array
+      const labels=res.costVsRevenue.map(p=>p.name);
+      const costData=res.costVsRevenue.map(p=>p.cost);
+      const revData=res.costVsRevenue.map(p=>p.revenue);
+      if(costRevChart){
+        costRevChart.data.labels=labels;
+        costRevChart.data.datasets[0].data=costData;
+        costRevChart.data.datasets[1].data=revData;
+        costRevChart.update();
+      }else{
+        costRevChart=new Chart(cvr,{ type:'line', data:{ labels, datasets:[{ label:'Cost', data:costData, borderColor:'#ef4444', backgroundColor:'#ef444433' },{ label:'Revenue', data:revData, borderColor:'#10b981', backgroundColor:'#10b98133' }] }, options:{ plugins:{legend:{labels:{color:'#e6edf5'}}}, scales:{x:{ticks:{color:'#9aa9bd'}},y:{ticks:{color:'#9aa9bd'}}}} });
+      }
+      const utilLabels=res.utilization.map(u=> u.name || String(u.userId).slice(-6));
+      const utilData=res.utilization.map(u=> Math.round(u.utilization*100));
+      if(utilChart){
+        utilChart.data.labels=utilLabels;
+        utilChart.data.datasets[0].data=utilData;
+        utilChart.update();
+      }else{
+        utilChart=new Chart(util,{ type:'bar', data:{ labels:utilLabels, datasets:[{ label:'Utilization %', data:utilData, backgroundColor:'#4f9fff55', borderColor:'#4f9fff' }] }, options:{ plugins:{legend:{labels:{color:'#e6edf5'}}}, scales:{x:{ticks:{color:'#9aa9bd'}},y:{ticks:{color:'#9aa9bd'}}}} });
+      }
+    }catch(e){ /* silent */ }
+  }
+  function startAnalyticsAutoRefresh(){
+    if(analyticsTimer) clearInterval(analyticsTimer);
+    analyticsTimer=setInterval(loadAnalytics, 30000); // refresh every 30s
+  }
+  window.addEventListener('beforeunload',()=>{ if(analyticsTimer) clearInterval(analyticsTimer); });
 
+  let creating=false;
   async function createProject(){
-    const name=document.getElementById('pName').value.trim(); if(!name) return alert('Project name required');
+    if(creating) return; creating=true;
+    const name=document.getElementById('pName').value.trim(); if(!name){ creating=false; return alert('Project name required'); }
     const desc=document.getElementById('pDesc').value.trim();
     const budget=Number(document.getElementById('pBudget').value||0);
     const deadline=document.getElementById('pDeadline').value||null;
-    // parse team emails if provided (optional enhancement later to map to ids)
-    const teamRaw = (document.getElementById('pTeam').value||'').trim();
     const manager = (window.FlowIQ.auth.user() && (window.FlowIQ.auth.user()._id || window.FlowIQ.auth.user().id)) || undefined;
-    const payload = { name, description:desc, budget, deadline, manager };
-    try{ await api.post('/pm/projects', payload); ui.closeModal('modalProject'); start(); }catch(e){ alert(e.message); }
+  const teamEmails = document.getElementById('pTeam').value.trim();
+  const payload = { name, description:desc, budget, deadline, manager, teamEmails };
+    try{ await api.post('/pm/projects', payload); ui.closeModal('modalProject'); document.getElementById('pName').value=''; document.getElementById('pDesc').value=''; document.getElementById('pBudget').value=''; document.getElementById('pDeadline').value=''; start(); }catch(e){ alert(e.message); } finally { creating=false; }
   }
 
   async function loadPendingExpenses(){
@@ -151,6 +223,7 @@
         document.getElementById('projectsListSection').classList.add('hidden');
       });
     }
+    const markAll=document.getElementById('notifMarkAll'); if(markAll){ markAll.addEventListener('click',()=> window.FlowIQ.notify.markAll()); }
   }
 
   function openEditModal(p){
@@ -178,8 +251,28 @@
     try{ await api.del(`/pm/projects/${id}`); selected=null; start(); }catch(e){ alert('Delete failed: '+e.message); }
   }
 
+  function applyProjectSearch(projects){
+    const input=document.querySelector('.topbar .search input');
+    if(!input) return projects;
+    const term=input.value.trim().toLowerCase();
+    if(!term) return projects;
+    return projects.filter(p=>{
+      return [p.name, p.client, p.status].some(v=> String(v||'').toLowerCase().includes(term));
+    });
+  }
+
+  function hookSearch(projects){
+    const input=document.querySelector('.topbar .search input');
+    if(!input) return;
+    input.addEventListener('input',()=>{
+      const filtered=applyProjectSearch(projects);
+      render(filtered);
+      buildProjectKanban(filtered);
+    });
+  }
+
   async function start(){
-    try{ const projects = await loadProjects(); render(projects); buildProjectKanban(projects); await loadKPIs(); charts(); }catch(e){ alert('Failed to load projects: '+e.message); }
+    try{ const projects = await loadProjects(); hookSearch(projects); const filtered=applyProjectSearch(projects); render(filtered); buildProjectKanban(filtered); await loadKPIs(); await loadAnalytics(); startAnalyticsAutoRefresh(); }catch(e){ alert('Failed to load projects: '+e.message); }
   }
   document.addEventListener('DOMContentLoaded',()=>{ bind(); start(); });
 })();
