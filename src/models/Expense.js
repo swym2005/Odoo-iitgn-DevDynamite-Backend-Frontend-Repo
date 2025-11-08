@@ -8,6 +8,9 @@ const expenseSchema = new mongoose.Schema(
     status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending', index: true },
     billable: { type: Boolean, default: true },
     submittedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    receiptUrl: { type: String },
+    reimbursed: { type: Boolean, default: false },
+    reimbursedAt: { type: Date },
   },
   { timestamps: true }
 );

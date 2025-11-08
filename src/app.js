@@ -1,4 +1,5 @@
 import express from 'express';
+import path from 'path';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { connectDB } from './config/db.js';
@@ -6,6 +7,7 @@ import authRoutes from './routes/auth.routes.js';
 import adminRoutes from './routes/admin.routes.js';
 import pmRoutes from './routes/pm.routes.js';
 import timesheetRoutes from './routes/timesheet.routes.js';
+import expenseRoutes from './routes/expense.routes.js';
 import { notFound, errorHandler } from './middleware/error.js';
 
 dotenv.config();
@@ -13,11 +15,14 @@ dotenv.config();
 const app = express();
 app.use(cors());
 app.use(express.json());
+// Static hosting for uploaded receipts (for preview)
+app.use('/uploads', express.static(path.resolve('uploads')));
 
 app.use('/auth', authRoutes);
 app.use('/admin', adminRoutes);
 app.use('/pm', pmRoutes);
 app.use('/timesheets', timesheetRoutes);
+app.use('/expenses', expenseRoutes);
 
 app.get('/', (req, res) => {
   res.json({ status: 'ok', service: 'FlowIQ Auth API' });
