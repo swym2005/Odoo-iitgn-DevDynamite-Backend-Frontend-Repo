@@ -24,7 +24,14 @@
     try {
       const res = await api.get('/team/projects');
       myProjects = res.projects || [];
-    } catch(e){ myProjects = []; }
+      console.log('Fetched projects for team member:', myProjects);
+      if(myProjects.length === 0) {
+        console.warn('No projects found. User may not be assigned to any tasks or added to any project teams.');
+      }
+    } catch(e){ 
+      console.error('Failed to fetch projects:', e);
+      myProjects = []; 
+    }
     return myProjects;
   }
 
@@ -59,13 +66,15 @@
 
   async function populateProjectSelect(){
     const select = document.getElementById('tProjectSelect');
+    if(!select) return;
     select.innerHTML='';
-    myProjects.forEach(p=>{
-      const opt=document.createElement('option');
-      opt.value=p._id; opt.textContent=p.name; select.appendChild(opt);
-    });
     if(!myProjects.length){
       const opt=document.createElement('option'); opt.textContent='No accessible projects'; opt.disabled=true; select.appendChild(opt);
+    } else {
+      myProjects.forEach(p=>{
+        const opt=document.createElement('option');
+        opt.value=p._id; opt.textContent=p.name; select.appendChild(opt);
+      });
     }
     const newBtn = document.getElementById('btnNewTask');
     if(newBtn){
@@ -83,9 +92,18 @@
     const sel = document.getElementById('tsProject');
     if(!sel) return;
     sel.innerHTML='';
-    myProjects.forEach(p=>{ const opt=document.createElement('option'); opt.value=p._id; opt.textContent=p.name; sel.appendChild(opt); });
-    if(!myProjects.length){ const opt=document.createElement('option'); opt.textContent='No accessible projects'; opt.disabled=true; sel.appendChild(opt); }
-    const date = document.getElementById('tsDate'); if(date) date.value = new Date().toISOString().slice(0,10);
+    if(!myProjects.length){
+      const opt=document.createElement('option'); opt.textContent='No accessible projects'; opt.disabled=true; sel.appendChild(opt);
+    } else {
+      myProjects.forEach(p=>{ 
+        const opt=document.createElement('option'); 
+        opt.value=p._id; 
+        opt.textContent=p.name; 
+        sel.appendChild(opt); 
+      });
+    }
+    const date = document.getElementById('tsDate'); 
+    if(date) date.value = new Date().toISOString().slice(0,10);
   }
 
   async function submitTimesheet(){
@@ -126,7 +144,7 @@
   async function start(){
     // load projects first so user sees selectable list
     await fetchProjects();
-    await populateProjectSelect();
+    populateProjectSelect();
     populateTsProjects();
     const tasks = await fetchTasks();
     render(tasks);

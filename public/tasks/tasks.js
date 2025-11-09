@@ -141,22 +141,22 @@
   }
 
   async function loadProjectAndMembers(){
-    // Get project detail to retrieve manager and team members
+    // Get all active users to populate the assignee dropdown
     try{
       if(role==='Team Member'){ return; }
-      const res = await api.get(`/pm/projects/${projectId}`);
-      const p = res.project || res;
-      // Fill project field
-      const pInput = document.getElementById('tProject');
-      if(pInput) pInput.value = p.name || projectId;
-      // Build members list: manager + teamMembers
-      const members = [];
-      if(p.manager){ members.push({ _id: p.manager._id || p.manager, name: p.manager.name || 'Manager' }); }
-      (p.teamMembers||[]).forEach(m=> members.push({ _id: m._id || m, name: m.name || m.email || 'Member' }));
-      const uniq = new Map(); members.forEach(m=> uniq.set(String(m._id), m));
+      const res = await api.get(`/pm/users`);
+      const users = res.users || [];
       const sel = document.getElementById('tAssignee');
-      if(sel){ sel.innerHTML = '<option value="">Unassigned</option>' + Array.from(uniq.values()).map(m=>`<option value="${m._id}">${m.name}</option>`).join(''); }
-    }catch(e){ console.warn('Failed to load project detail', e); }
+      if(sel){ sel.innerHTML = '<option value="">Unassigned</option>' + users.map(u=>`<option value="${u._id}">${u.name} (${u.role})</option>`).join(''); }
+      
+      // Also fill the project name if a project is selected
+      if(projectId) {
+        const projectRes = await api.get(`/pm/projects/${projectId}`);
+        const p = projectRes.project || projectRes;
+        const pInput = document.getElementById('tProject');
+        if(pInput) pInput.value = p.name || projectId;
+      }
+    }catch(e){ console.warn('Failed to load users or project detail', e); }
   }
 
   async function createTask(){

@@ -5,17 +5,23 @@ import { Task } from '../models/Task.js';
 export const myProjects = async (req, res, next) => {
   try {
     const uid = new mongoose.Types.ObjectId(req.user.id);
+    console.log('Fetching projects for user:', req.user.id, 'ObjectId:', uid);
+    
     // Find projects where user is in teamMembers array OR has tasks assigned
     // First, get projects where user is a team member
     const projectsByMembership = await Project.find({ teamMembers: { $in: [uid] } })
       .select('name client status budget deadline manager teamMembers')
       .lean();
+    console.log('Projects by membership:', projectsByMembership.length);
     
     // Also find projects where user has tasks assigned (even if not in teamMembers)
     const tasksWithProjects = await Task.find({ assignee: uid }).distinct('project');
+    console.log('Tasks assigned to user in projects:', tasksWithProjects);
+    
     const projectsByTasks = await Project.find({ _id: { $in: tasksWithProjects } })
       .select('name client status budget deadline manager teamMembers')
       .lean();
+    console.log('Projects by tasks:', projectsByTasks.length);
     
     // Combine and deduplicate
     const allProjectIds = new Set();
@@ -28,8 +34,12 @@ export const myProjects = async (req, res, next) => {
       }
     });
     
+    console.log('Total unique projects for user:', allProjects.length);
     res.json({ success: true, projects: allProjects });
-  } catch (e) { next(e); }
+  } catch (e) { 
+    console.error('Error in myProjects:', e);
+    next(e); 
+  }
 };
 
 export const myTasks = async (req, res, next) => {

@@ -101,8 +101,11 @@ export const getProjectDetail = async (user, projectId) => {
     e.status = 404;
     throw e;
   }
-  // basic access check: admin or manager
-  if (!isAdmin(user) && String(project.manager?._id || project.manager) !== user.id) {
+  // basic access check: admin or manager or team member
+  const isManager = String(project.manager?._id || project.manager) === user.id;
+  const isMember = project.teamMembers.some(m => String(m._id) === user.id);
+
+  if (!isAdmin(user) && !isManager && !isMember) {
     const e = new Error('Forbidden');
     e.status = 403;
     throw e;

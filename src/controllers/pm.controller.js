@@ -249,13 +249,33 @@ export const tasksGet = async (req, res, next) => {
 };
 
 export const tasksPost = async (req, res, next) => {
-  try { const data = validate(createTaskSchema, { ...req.body, project: req.params.projectId }); res.status(201).json({ success: true, task: await addTask(data) }); } catch (e) { next(e); }
+  try {
+    const data = validate(createTaskSchema, { ...req.body, project: req.params.projectId });
+    const task = await addTask(data);
+    // Ensure assignee is a team member
+    if (task.assignee) {
+      const project = await (await import('../models/Project.js')).Project.findById(task.project);
+      if (project && !project.teamMembers.some(m => String(m) === String(task.assignee))) {
+        project.teamMembers.push(task.assignee);
+        await project.save();
+      }
+    }
+    res.status(201).json({ success: true, task });
+  } catch (e) { next(e); }
 };
 
 export const taskPatch = async (req, res, next) => {
   try {
     const data = validate(updateTaskSchema, req.body);
     const task = await updateTask(req.params.taskId, data);
+    // Ensure new assignee is a team member
+    if (data.assignee) {
+      const project = await (await import('../models/Project.js')).Project.findById(task.project);
+      if (project && !project.teamMembers.some(m => String(m) === String(data.assignee))) {
+        project.teamMembers.push(data.assignee);
+        await project.save();
+      }
+    }
     if (data.status) {
       await createNotification({
         audienceRole: 'Project Manager',

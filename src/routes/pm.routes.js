@@ -53,6 +53,15 @@ router.get('/project-managers', async (req, res, next) => {
     res.json({ success: true, managers });
   } catch (e) { next(e); }
 });
+
+router.get('/users', async (req, res, next) => {
+  try {
+    const { User } = await import('../models/User.js');
+    const users = await User.find({ status: 'active' }).select('_id name email role').lean();
+    res.json({ success: true, users });
+  } catch (e) { next(e); }
+});
+
 router.get('/projects', projectsGet);
 router.post('/projects', projectsPost);
 router.get('/projects/:projectId', requireProjectAccess, projectDetailGet);

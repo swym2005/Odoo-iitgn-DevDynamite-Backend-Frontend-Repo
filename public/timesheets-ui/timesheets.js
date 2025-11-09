@@ -6,7 +6,15 @@
   let entries=[]; let projects=[]; let tasks=[];
 
   async function loadProjects(){
-    try{ const res = await api.get('/pm/projects'); projects = res.projects||[]; }catch{ projects=[]; }
+    const user = window.FlowIQ.auth.user();
+    const role = user?.role || '';
+    try{ 
+      // Use appropriate endpoint based on role
+      const res = (role === 'Team Member') 
+        ? await api.get('/team/projects') 
+        : await api.get('/pm/projects'); 
+      projects = res.projects||[]; 
+    }catch{ projects=[]; }
     const filterSel = el('tsProjectFilter');
     const createSel = el('tsProjectSelect');
     if(!projects.length){
@@ -16,24 +24,48 @@
     }
     filterSel.innerHTML = '<option value="">All Projects</option>' + projects.map(p=>`<option value="${p._id}">${p.name}</option>`).join('');
     createSel.innerHTML = projects.map(p=>`<option value="${p._id}">${p.name}</option>`).join('');
-    // Default filter if empty
-    if(!filterSel.value){ filterSel.value = projects[0]._id; }
+    // Default filter to show all
+    filterSel.value = '';
   }
 
   async function loadTasks(projectId){
     if(!projectId){ tasks=[]; el('tsTaskSelect').innerHTML = '<option value="">(No project)</option>'; return; }
-    try{ const res = await api.get(`/pm/projects/${projectId}/tasks`); tasks = res.tasks||[]; }catch{ tasks=[]; }
+    const user = window.FlowIQ.auth.user();
+    const role = user?.role || '';
+    try{ 
+      // Use appropriate endpoint based on role
+      const res = (role === 'Team Member')
+        ? await api.get(`/team/projects/${projectId}/tasks`)
+        : await api.get(`/pm/projects/${projectId}/tasks`); 
+      tasks = res.tasks||[]; 
+    }catch{ tasks=[]; }
     el('tsTaskSelect').innerHTML = '<option value="">(None)</option>' + tasks.map(t=>`<option value="${t._id}">${t.title}</option>`).join('');
   }
 
   async function loadTimesheets(){
-    const pid = el('tsProjectFilter').value || ((projects[0] && projects[0]._id) || '');
-    if(!pid){ entries=[]; render(); return; }
+    const pid = el('tsProjectFilter').value || '';
     try{
-      const res = await api.get(`/pm/projects/${pid}/timesheets`);
-      entries = res.timesheets||[];
-    }catch(e){ entries=[]; }
-    entries = entries.map(t=> ({ date: t.date? new Date(t.date).toISOString().slice(0,10):'', task: t.task?.title||'', hours: t.hours, billable: t.billable, notes: t.note||'', project: projects.find(p=> String(p._id)===String(t.project))?.name || '' }));
+      // Use the user-specific timesheets endpoint
+      const res = await api.get('/timesheets' + (pid ? `?project=${pid}` : ''));
+      console.log('Loaded timesheets:', res);
+      entries = res.items || [];
+      console.log('Timesheet entries:', entries);
+    }catch(e){ 
+      console.error('Failed to load timesheets:', e);
+      entries=[]; 
+    }
+    entries = entries.map(t=> { 
+      const projectName = t.project?.name || projects.find(p=> String(p._id)===String(t.project?._id || t.project))?.name || 'Unknown';
+      return {
+        date: t.date? new Date(t.date).toISOString().slice(0,10):'', 
+        task: t.task?.title || 'No task', 
+        hours: t.hours, 
+        billable: t.billable, 
+        notes: t.note||'', 
+        project: projectName
+      };
+    });
+    console.log('Mapped entries:', entries);
   }
 
   function render(){
@@ -66,19 +98,40 @@
   async function save(){
     const pid = el('tsProjectSelect').value; if(!pid) return alert('Select a project');
     const taskId = el('tsTaskSelect').value || null;
-    const hours = parseFloat(el('tsHours').value||'0'); const date = el('tsDate').value || new Date().toISOString().slice(0,10); const note = el('tsNotes').value.trim(); const billable = el('tsBillable').checked;
+    const hours = parseFloat(el('tsHours').value||'0'); 
+    const date = el('tsDate').value || new Date().toISOString().slice(0,10); 
+    const note = el('tsNotes').value.trim(); 
+    const billable = el('tsBillable').checked;
     try{
       ui.showLoader(contentArea);
-      await api.post(`/pm/projects/${pid}/timesheets`, { task: taskId, hours, billable, note, date });
+      // Use the user-specific timesheets endpoint
+      await api.post('/timesheets', { project: pid, task: taskId, hours, billable, note, date });
       ui.closeModal('modalTs');
-      // Ensure list shows the project we just logged hours for
-      if(el('tsProjectFilter')) el('tsProjectFilter').value = pid;
+      // Clear form
+      el('tsHours').value = '';
+      el('tsNotes').value = '';
+      el('tsBillable').checked = true;
+      // Refresh list
       await loadTimesheets();
       render();
     }catch(e){ alert(e.message); }
     finally { ui.hideLoader(contentArea); }
   }
 
-  async function start(){ ui.showLoader(contentArea); try{ await loadProjects(); const initialPid = el('tsProjectFilter').value || ((projects[0] && projects[0]._id) || ''); await loadTasks(initialPid); await loadTimesheets(); render(); } finally { ui.hideLoader(contentArea); } }
+  async function start(){ 
+    ui.showLoader(contentArea); 
+    try{ 
+      await loadProjects(); 
+      console.log('Projects loaded:', projects);
+      const initialPid = el('tsProjectFilter').value || ''; 
+      if(initialPid) {
+        await loadTasks(initialPid); 
+      }
+      await loadTimesheets(); 
+      render(); 
+    } finally { 
+      ui.hideLoader(contentArea); 
+    } 
+  }
   document.addEventListener('DOMContentLoaded',()=>{ el('btnLog').addEventListener('click',async()=> { await loadTasks(el('tsProjectSelect').value); ui.openModal('modalTs'); }); el('tsSave').addEventListener('click', save); el('tsProjectFilter').addEventListener('change', async()=>{ await loadTasks(el('tsProjectFilter').value); await loadTimesheets(); render(); }); el('tsProjectSelect').addEventListener('change', async()=>{ await loadTasks(el('tsProjectSelect').value); }); el('searchTs').addEventListener('input', render); ui.bindClose(); start(); });
 })();
