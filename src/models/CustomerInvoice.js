@@ -8,6 +8,8 @@ const lineItemSchema = new mongoose.Schema(
     unitPrice: { type: Number, default: 0, min: 0 },
     taxRate: { type: Number, default: 0, min: 0 },
     total: { type: Number, default: 0, min: 0 },
+    project: { type: mongoose.Schema.Types.ObjectId, ref: 'Project' }, // Link back to Project (per problem statement)
+    salesOrder: { type: mongoose.Schema.Types.ObjectId, ref: 'SalesOrder' }, // Link back to Sales Order if used
     sourceExpense: { type: mongoose.Schema.Types.ObjectId, ref: 'Expense' }, // if auto-generated from expenses
   },
   { _id: false }

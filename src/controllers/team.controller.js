@@ -5,10 +5,30 @@ import { Task } from '../models/Task.js';
 export const myProjects = async (req, res, next) => {
   try {
     const uid = new mongoose.Types.ObjectId(req.user.id);
-    const projects = await Project.find({ teamMembers: uid })
+    // Find projects where user is in teamMembers array OR has tasks assigned
+    // First, get projects where user is a team member
+    const projectsByMembership = await Project.find({ teamMembers: { $in: [uid] } })
       .select('name client status budget deadline manager teamMembers')
       .lean();
-    res.json({ success: true, projects });
+    
+    // Also find projects where user has tasks assigned (even if not in teamMembers)
+    const tasksWithProjects = await Task.find({ assignee: uid }).distinct('project');
+    const projectsByTasks = await Project.find({ _id: { $in: tasksWithProjects } })
+      .select('name client status budget deadline manager teamMembers')
+      .lean();
+    
+    // Combine and deduplicate
+    const allProjectIds = new Set();
+    const allProjects = [];
+    
+    [...projectsByMembership, ...projectsByTasks].forEach(p => {
+      if (!allProjectIds.has(String(p._id))) {
+        allProjectIds.add(String(p._id));
+        allProjects.push(p);
+      }
+    });
+    
+    res.json({ success: true, projects: allProjects });
   } catch (e) { next(e); }
 };
 
@@ -54,5 +74,24 @@ export const assignSelf = async (req, res, next) => {
     task.activity.push({ user: req.user.id, type: 'assignment', meta: { assignee: req.user.id } });
     await task.save();
     res.json({ success:true, task });
+  } catch(e){ next(e); }
+};
+
+export const updateMyTask = async (req, res, next) => {
+  try {
+    const { projectId, taskId } = req.params;
+    // Ensure user is member of the project
+    const project = await Project.findOne({ _id: projectId, teamMembers: req.user.id });
+    if(!project){ const err=new Error('Forbidden'); err.status=403; throw err; }
+    const task = await Task.findOne({ _id: taskId, project: projectId });
+    if(!task){ const err=new Error('Task not found'); err.status=404; throw err; }
+    // Team Members can update tasks they're assigned to, or any task in their project
+    // (Allow updates even if not assigned, as long as they're project members)
+    const { updateTask } = await import('../services/pm.service.js');
+    const { updateTaskSchema } = await import('../validators/pm.validators.js');
+    const { validate } = await import('../utils/validation.js');
+    const data = validate(updateTaskSchema, req.body);
+    const updated = await updateTask(taskId, data);
+    res.json({ success: true, task: updated });
   } catch(e){ next(e); }
 };

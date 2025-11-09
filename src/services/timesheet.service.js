@@ -75,3 +75,26 @@ export const chartsMyTimesheets = async (userId, filters = {}) => {
   }
   return { hoursPerDay, billable: billable, nonBillable: nonBillable };
 };
+
+export const overviewMyTimesheets = async (userId) => {
+  const hoursPerProject = await Timesheet.aggregate([
+    { $match: { user: new mongoose.Types.ObjectId(userId) } },
+    { $group: { _id: '$project', hours: { $sum: '$hours' } } },
+    { $sort: { hours: -1 } },
+    { $limit: 10 },
+  ]);
+  
+  // Populate project names
+  const { Project } = await import('../models/Project.js');
+  const projectIds = hoursPerProject.map(h => h._id).filter(Boolean);
+  const projects = await Project.find({ _id: { $in: projectIds } }).select('name').lean();
+  const projectMap = new Map(projects.map(p => [String(p._id), p.name]));
+  
+  return {
+    hoursPerProject: hoursPerProject.map(h => ({
+      projectId: h._id,
+      projectName: projectMap.get(String(h._id)) || 'Unknown Project',
+      hours: h.hours || 0,
+    })),
+  };
+};

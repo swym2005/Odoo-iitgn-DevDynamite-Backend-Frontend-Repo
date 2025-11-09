@@ -1,5 +1,5 @@
 import { timesheetLogSchema, timesheetQuerySchema } from '../validators/timesheet.validators.js';
-import { listMyTimesheets, logMyTimesheet, deleteMyTimesheet, summarizeMyTimesheets, chartsMyTimesheets } from '../services/timesheet.service.js';
+import { listMyTimesheets, logMyTimesheet, deleteMyTimesheet, summarizeMyTimesheets, chartsMyTimesheets, overviewMyTimesheets } from '../services/timesheet.service.js';
 
 const validate = (schema, payload) => {
   const { error, value } = schema.validate(payload, { abortEarly: false });
@@ -43,5 +43,12 @@ export const myTimesheetsCharts = async (req, res, next) => {
     const filters = validate(timesheetQuerySchema, req.query);
     const charts = await chartsMyTimesheets(req.user.id, filters || {});
     res.json({ success: true, charts });
+  } catch (e) { next(e); }
+};
+
+export const myTimesheetsOverview = async (req, res, next) => {
+  try {
+    const overview = await overviewMyTimesheets(req.user.id);
+    res.json({ success: true, ...overview });
   } catch (e) { next(e); }
 };

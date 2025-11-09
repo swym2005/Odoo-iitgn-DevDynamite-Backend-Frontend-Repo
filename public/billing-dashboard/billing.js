@@ -15,7 +15,10 @@
     el('kRev').textContent = fmt(revenue);
     el('kCost').textContent = fmt(cost);
     el('kOut').textContent = fmt(outstanding);
-    el('kProfit').textContent = revenue? Math.round(((revenue - cost)/revenue)*100)+'%' : '—';
+    // Cap profit percentage at -100% to 100% for clarity
+    const profit = revenue - cost;
+    const profitPct = (revenue && revenue > 0) ? Math.max(-100, Math.min(100, Math.round((profit/revenue)*100))) : null;
+    el('kProfit').textContent = profitPct !== null ? profitPct+'%' : '—';
   }
   function render(){ const mode = el('tab').value; tbody().innerHTML=''; docs.filter(d=>{
     if(mode==='SO') return d.type==='Sales Order';

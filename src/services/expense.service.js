@@ -39,8 +39,21 @@ export const listExpenses = async (user, { project, status, from, to, search } =
 export const setStatus = async (id, status) => {
   const exp = await Expense.findById(id);
   if (!exp) { const e = new Error('Expense not found'); e.status = 404; throw e; }
+  const wasApproved = exp.status === 'approved';
   exp.status = status;
   await exp.save();
+  
+  // Update project cost when expense is approved
+  if (status === 'approved' && !wasApproved && exp.project) {
+    const { Project } = await import('../models/Project.js');
+    await Project.findByIdAndUpdate(exp.project, { $inc: { cost: exp.amount } });
+  }
+  // Decrement project cost if expense is rejected after being approved
+  else if (status !== 'approved' && wasApproved && exp.project) {
+    const { Project } = await import('../models/Project.js');
+    await Project.findByIdAndUpdate(exp.project, { $inc: { cost: -exp.amount } });
+  }
+  
   return exp;
 };
 
@@ -57,6 +70,18 @@ export const maybeAttachToInvoice = async (expense) => {
     const number = 'INVX-' + Date.now();
     invoice = await CustomerInvoice.create({ number, customer, project: expense.project, amount: 0, status: 'Draft', date: new Date() });
   }
+  
+  // Add expense as line item with project link (per problem statement)
+  if (!invoice.lineItems) invoice.lineItems = [];
+  invoice.lineItems.push({
+    description: expense.description,
+    quantity: 1,
+    unitPrice: expense.amount,
+    taxRate: 0,
+    total: expense.amount,
+    project: expense.project, // Link back to Project
+    sourceExpense: expense._id, // Link back to Expense
+  });
   invoice.amount += expense.amount;
   await invoice.save();
   expense.billed = true;

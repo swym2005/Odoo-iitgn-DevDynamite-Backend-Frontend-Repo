@@ -4,10 +4,31 @@
   const API_BASE = '';
   function token(){ return localStorage.getItem('orbitone_token') || localStorage.getItem('flowiq_token'); }
   function user(){ try{return JSON.parse(localStorage.getItem('orbitone_user')||localStorage.getItem('flowiq_user')||'null');}catch(e){return null;} }
-  function authHeaders(){ return token()? { 'Authorization':'Bearer '+token(), 'Content-Type':'application/json' } : { 'Content-Type':'application/json' }; }
+  function authHeaders(){ 
+    const tok = token();
+    if(!tok) {
+      console.warn('No token found in localStorage');
+      return { 'Content-Type':'application/json' };
+    }
+    return { 'Authorization':'Bearer '+tok, 'Content-Type':'application/json' }; 
+  }
   async function request(path, opts={}){
-    const res = await fetch(API_BASE+path, { ...opts, headers:{...authHeaders(), ...(opts.headers||{})} });
-    if(res.status === 401){ localStorage.removeItem('flowiq_token'); localStorage.removeItem('flowiq_user'); window.location.replace('/'); return; }
+    const tok = token();
+    if(!tok && path !== '/auth/login' && path !== '/auth/signup') {
+      console.warn('Request to', path, 'without token');
+    }
+    const headers = { ...authHeaders(), ...(opts.headers||{}) };
+    // Ensure Authorization header is preserved if token exists
+    if(tok && !headers['Authorization'] && !headers['authorization']) {
+      headers['Authorization'] = 'Bearer ' + tok;
+    }
+    const res = await fetch(API_BASE+path, { ...opts, headers });
+    if(res.status === 401){ 
+      // Clean up all token keys
+      ['orbitone_token','orbitone_user','flowiq_token','flowiq_user'].forEach(k=> localStorage.removeItem(k));
+      window.location.replace('/login'); 
+      return; 
+    }
     let json=null; try{ json = await res.json(); }catch(e){ json=null; }
     if(!res.ok || (json && json.success===false)){
       const msg = json?.message || ('Request failed: '+res.status);
@@ -19,12 +40,39 @@
     get(path){ return request(path); },
     post(path, body){ return request(path, { method:'POST', body: JSON.stringify(body) }); },
     patch(path, body){ return request(path, { method:'PATCH', body: JSON.stringify(body) }); },
+    put(path, body){ 
+      // If body is FormData, use multipart, otherwise JSON
+      if(body instanceof FormData){
+        return api.putMultipart(path, body);
+      }
+      return request(path, { method:'PUT', body: JSON.stringify(body) }); 
+    },
     del(path){ return request(path, { method:'DELETE' }); },
     async postMultipart(path, formData){
       // Use a raw fetch to avoid JSON headers; include auth if available
       const headers = token()? { 'Authorization': 'Bearer '+token() } : {};
       const res = await fetch(API_BASE+path, { method:'POST', headers, body: formData });
-      if(res.status === 401){ localStorage.removeItem('flowiq_token'); localStorage.removeItem('flowiq_user'); window.location.replace('/'); return; }
+      if(res.status === 401){ 
+        ['orbitone_token','orbitone_user','flowiq_token','flowiq_user'].forEach(k=> localStorage.removeItem(k));
+        window.location.replace('/login'); 
+        return; 
+      }
+      let json=null; try{ json = await res.json(); }catch(e){ json=null; }
+      if(!res.ok || (json && json.success===false)){
+        const msg = json?.message || ('Request failed: '+res.status);
+        throw new Error(msg);
+      }
+      return json;
+    },
+    async putMultipart(path, formData){
+      // Use a raw fetch to avoid JSON headers; include auth if available
+      const headers = token()? { 'Authorization': 'Bearer '+token() } : {};
+      const res = await fetch(API_BASE+path, { method:'PUT', headers, body: formData });
+      if(res.status === 401){ 
+        ['orbitone_token','orbitone_user','flowiq_token','flowiq_user'].forEach(k=> localStorage.removeItem(k));
+        window.location.replace('/login'); 
+        return; 
+      }
       let json=null; try{ json = await res.json(); }catch(e){ json=null; }
       if(!res.ok || (json && json.success===false)){
         const msg = json?.message || ('Request failed: '+res.status);

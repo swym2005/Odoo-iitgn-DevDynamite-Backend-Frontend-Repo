@@ -2,9 +2,9 @@ import Joi from 'joi';
 
 export const personalInfoSchema = Joi.object({
   name: Joi.string().min(2).max(100).optional(),
-  phone: Joi.string().max(30).optional(),
-  location: Joi.string().max(120).optional(),
-}).required();
+  phone: Joi.string().max(30).allow('', null).optional(),
+  location: Joi.string().max(120).allow('', null).optional(),
+}).min(1); // At least one field must be provided
 
 export const changePasswordSchema = Joi.object({
   currentPassword: Joi.string().min(6).required(),

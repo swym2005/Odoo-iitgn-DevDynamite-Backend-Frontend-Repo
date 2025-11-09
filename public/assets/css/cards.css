@@ -11,5 +11,8 @@
 .progress.budget > span{ background:var(--pc-grad-budget); }
 .actions{ display:flex; gap:.5rem; flex-wrap:wrap; }
 .actions .button-outline{ font-size:.8rem; padding:.35rem .55rem; }
-.status-chip{ padding:.2rem .5rem; border-radius:999px; background:#0f1a2c; border:1px solid var(--pc-border); color:#c7d2fe; font-size:.7rem; }
+.status-chip{ padding:.2rem .5rem; border-radius:999px; background:#0f1a2c; border:1px solid var(--pc-border); color:#c7d2fe; font-size:.7rem; text-transform:capitalize; }
+.status-chip.status-pending{ background:#1a1f2e; border-color:#f59e0b; color:#fbbf24; }
+.status-chip.status-approved{ background:#0f1f1a; border-color:#10b981; color:#34d399; }
+.status-chip.status-rejected{ background:#1f1a1a; border-color:#ef4444; color:#f87171; }
 .project-card.selected{ outline:2px solid #4f9fff55; }

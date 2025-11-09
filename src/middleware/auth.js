@@ -6,13 +6,20 @@ export const requireAuth = (req, res, next) => {
     const authHeader = req.headers.authorization || '';
     const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
     if (!token) {
-      const e = new Error('Unauthorized');
+      const e = new Error('Unauthorized - No token provided');
       e.status = 401;
       throw e;
     }
-    const payload = verifyToken(token);
-    req.user = { id: payload.sub, role: payload.role };
-    next();
+    try {
+      const payload = verifyToken(token);
+      req.user = { id: payload.sub, role: payload.role };
+      next();
+    } catch (verifyErr) {
+      // Token verification failed (expired, invalid, etc.)
+      const e = new Error('Unauthorized - Invalid or expired token');
+      e.status = 401;
+      throw e;
+    }
   } catch (err) {
     err.status = err.status || 401;
     next(err);
@@ -39,6 +46,16 @@ export const requirePMOrAdmin = (req, res, next) => {
 
 export const requireFinanceOrAdmin = (req, res, next) => {
   if (!req.user || (req.user.role !== 'Admin' && req.user.role !== 'Finance')) {
+    const e = new Error('Forbidden');
+    e.status = 403;
+    return next(e);
+  }
+  next();
+};
+
+// Allow Finance, Admin, or Project Manager (PMs can create documents in project settings)
+export const requireFinancePMOrAdmin = (req, res, next) => {
+  if (!req.user || (req.user.role !== 'Admin' && req.user.role !== 'Finance' && req.user.role !== 'Project Manager')) {
     const e = new Error('Forbidden');
     e.status = 403;
     return next(e);

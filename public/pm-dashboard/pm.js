@@ -6,11 +6,14 @@
   function escapeHtml(str){ return String(str||'').replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[s])); }
 
   function projectCardMarkup(p){
-  const profitPct = p.revenue? (((p.revenue||0)-(p.cost||0))/(p.revenue||1)*100).toFixed(1):'--';
+  // Calculate profit percentage, capped at -100% for clarity (loss cannot exceed 100% of revenue)
+  const profit = (p.revenue||0) - (p.cost||0);
+  const profitPct = (p.revenue && p.revenue > 0) ? Math.max(-100, Math.min(100, (profit / p.revenue) * 100)).toFixed(1) : '--';
   const progress = p.progress!=null? p.progress : 0;
   const budget = Number(p.budget||0);
   const cost = Number(p.cost||0);
   const usage = budget>0 ? Math.min(100, Math.round(cost/budget*100)) : 0;
+  const managerName = p.manager?.name || (p.manager && typeof p.manager === 'object' ? p.manager.name : '—') || '—';
     return `
       <div class="project-card" data-id="${p._id}">
         <div class="thumb">🗂️</div>
@@ -23,9 +26,12 @@
         </div>
   <div class="progress"><span style="width:${progress}%"></span></div>
   <div class="progress budget" title="Budget used: ${usage}%"><span style="width:${usage}%"></span></div>
-        <div class="actions">
-          <a class="button-outline btn-view" href="/project-detail/?id=${p._id}">View</a>
-          <a class="button-outline btn-tasks" href="/tasks/?projectId=${p._id}">Tasks</a>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:.5rem;padding-top:.5rem;border-top:1px solid rgba(255,255,255,.1);">
+          <span style="font-size:.75rem;color:#9aa9bd;">Manager: ${escapeHtml(managerName)}</span>
+          <div class="actions" style="display:flex;gap:.4rem;">
+            <a class="button-outline btn-view" href="/project-detail/?id=${p._id}" style="padding:.4rem .6rem;font-size:.75rem;">View</a>
+            <a class="button-outline btn-tasks" href="/tasks/?projectId=${p._id}" style="padding:.4rem .6rem;font-size:.75rem;">Tasks</a>
+          </div>
         </div>
       </div>`;
   }
@@ -44,7 +50,9 @@
     const res = await api.get('/pm/dashboard');
     const k = res.KPIs || {};
     document.getElementById('kpiActive').textContent = k.activeProjects ?? '0';
-    document.getElementById('kpiProfit').textContent = ((k.profitPercent||0)*100).toFixed(1)+'%';
+    // Cap profit percentage at -100% to 100% for clarity
+    const profitPct = Math.max(-100, Math.min(100, (k.profitPercent||0)*100));
+    document.getElementById('kpiProfit').textContent = profitPct.toFixed(1)+'%';
     document.getElementById('kpiHours').textContent = (k.hoursLogged||0)+'h'; // default (all projects)
     document.getElementById('kpiPending').textContent = k.pendingApprovals ?? '0';
   }
@@ -111,7 +119,9 @@
         card.style.cursor='grab';
         card.setAttribute('draggable','true');
         card.addEventListener('dragstart',e=>{ e.dataTransfer.setData('text/plain', p._id); });
-  const profitPct = p.revenue? (((p.revenue||0)-(p.cost||0))/(p.revenue||1)*100).toFixed(1):'--';
+  // Calculate profit percentage, capped at -100% for clarity (loss cannot exceed 100% of revenue)
+  const profit = (p.revenue||0) - (p.cost||0);
+  const profitPct = (p.revenue && p.revenue > 0) ? Math.max(-100, Math.min(100, (profit / p.revenue) * 100)).toFixed(1) : '--';
   const progress = p.progress!=null? p.progress : 0;
   const budget = Number(p.budget||0);
   const cost = Number(p.cost||0);
@@ -155,14 +165,65 @@
       }else{
         costRevChart=new Chart(cvr,{ type:'line', data:{ labels, datasets:[{ label:'Cost', data:costData, borderColor:'#ef4444', backgroundColor:'#ef444433' },{ label:'Revenue', data:revData, borderColor:'#10b981', backgroundColor:'#10b98133' }] }, options:{ plugins:{legend:{labels:{color:'#e6edf5'}}}, scales:{x:{ticks:{color:'#9aa9bd'}},y:{ticks:{color:'#9aa9bd'}}}} });
       }
+      if(!util || !res.utilization || res.utilization.length === 0){
+        if(util && util.parentElement){
+          util.parentElement.innerHTML = '<div style="padding:2rem;text-align:center;opacity:.6">No utilization data available</div>';
+        }
+        return;
+      }
       const utilLabels=res.utilization.map(u=> u.name || String(u.userId).slice(-6));
       const utilData=res.utilization.map(u=> Math.round(u.utilization*100));
+      const hoursData=res.utilization.map(u=> u.hours || 0);
       if(utilChart){
         utilChart.data.labels=utilLabels;
         utilChart.data.datasets[0].data=utilData;
+        utilChart.data.datasets[1].data=hoursData;
         utilChart.update();
       }else{
-        utilChart=new Chart(util,{ type:'bar', data:{ labels:utilLabels, datasets:[{ label:'Utilization %', data:utilData, backgroundColor:'#4f9fff55', borderColor:'#4f9fff' }] }, options:{ plugins:{legend:{labels:{color:'#e6edf5'}}}, scales:{x:{ticks:{color:'#9aa9bd'}},y:{ticks:{color:'#9aa9bd'}}}} });
+        utilChart=new Chart(util,{ 
+          type:'bar', 
+          data:{ 
+            labels:utilLabels, 
+            datasets:[
+              { 
+                label:'Utilization %', 
+                data:utilData, 
+                backgroundColor:'#4f9fff55', 
+                borderColor:'#4f9fff',
+                yAxisID: 'y'
+              },
+              {
+                label: 'Hours Logged',
+                data: hoursData,
+                backgroundColor: '#10b98155',
+                borderColor: '#10b981',
+                yAxisID: 'y1'
+              }
+            ]
+          }, 
+          options:{ 
+            plugins:{legend:{labels:{color:'#e6edf5'}}}, 
+            scales:{
+              x:{ticks:{color:'#9aa9bd'}, grid: { color: '#2d3a55' }},
+              y:{
+                type: 'linear',
+                display: true,
+                position: 'left',
+                ticks:{color:'#9aa9bd', max: 100},
+                grid: { color: '#2d3a55' },
+                title: { display: true, text: 'Utilization %', color: '#9aa9bd' }
+              },
+              y1:{
+                type: 'linear',
+                display: true,
+                position: 'right',
+                ticks:{color:'#9aa9bd'},
+                grid: { drawOnChartArea: false },
+                title: { display: true, text: 'Hours', color: '#9aa9bd' }
+              }
+            }
+          } 
+        }); 
       }
     }catch(e){ /* silent */ }
   }
@@ -173,16 +234,85 @@
   window.addEventListener('beforeunload',()=>{ if(analyticsTimer) clearInterval(analyticsTimer); });
 
   let creating=false;
+  let projectManagers=[];
+  
+  async function loadProjectManagers(){
+    try{
+      const currentUser = window.FlowIQ.auth.user();
+      const currentUserRole = currentUser?.role;
+      const currentUserId = currentUser?._id || currentUser?.id;
+      
+      // Only Admins can see and select other Project Managers
+      // Project Managers will automatically be assigned as the manager
+      if(currentUserRole === 'Admin'){
+        const res = await api.get('/pm/project-managers');
+        projectManagers = res.managers || [];
+        const select = document.getElementById('pManager');
+        if(!select) return;
+        select.innerHTML = '<option value="">Select Project Manager...</option>' + 
+          projectManagers.map(m => `<option value="${m._id}">${m.name} (${m.email})${m.role ? ' - ' + m.role : ''}</option>`).join('');
+        select.style.display = 'block';
+      } else {
+        // For Project Managers, hide the dropdown - they will be auto-assigned
+        const select = document.getElementById('pManager');
+        if(select) {
+          select.style.display = 'none';
+          const label = select.previousElementSibling;
+          if(label && label.tagName === 'LABEL') {
+            label.style.display = 'none';
+          }
+        }
+      }
+    }catch(e){
+      console.warn('Failed to load project managers', e);
+      const select = document.getElementById('pManager');
+      if(select) {
+        select.style.display = 'none';
+        const label = select.previousElementSibling;
+        if(label && label.tagName === 'LABEL') {
+          label.style.display = 'none';
+        }
+      }
+    }
+  }
+  
   async function createProject(){
     if(creating) return; creating=true;
     const name=document.getElementById('pName').value.trim(); if(!name){ creating=false; return alert('Project name required'); }
     const desc=document.getElementById('pDesc').value.trim();
     const budget=Number(document.getElementById('pBudget').value||0);
     const deadline=document.getElementById('pDeadline').value||null;
-    const manager = (window.FlowIQ.auth.user() && (window.FlowIQ.auth.user()._id || window.FlowIQ.auth.user().id)) || undefined;
-  const teamEmails = document.getElementById('pTeam').value.trim();
-  const payload = { name, description:desc, budget, deadline, manager, teamEmails };
-    try{ await api.post('/pm/projects', payload); ui.closeModal('modalProject'); document.getElementById('pName').value=''; document.getElementById('pDesc').value=''; document.getElementById('pBudget').value=''; document.getElementById('pDeadline').value=''; start(); }catch(e){ alert(e.message); } finally { creating=false; }
+    const currentUser = window.FlowIQ.auth.user();
+    const currentUserRole = currentUser?.role;
+    const currentUserId = currentUser?._id || currentUser?.id;
+    
+    // Only Admins can select a different manager
+    // Project Managers will automatically be assigned as the manager (no need to send manager field)
+    const managerSelect = document.getElementById('pManager');
+    let manager = undefined;
+    if(currentUserRole === 'Admin' && managerSelect && managerSelect.value) {
+      manager = managerSelect.value;
+    } else if(currentUserRole === 'Admin') {
+      // Admin didn't select a manager - don't send manager field, let backend default
+      manager = undefined;
+    } else {
+      // For Project Managers, don't send manager - backend will auto-assign them
+      manager = undefined;
+    }
+    
+    const teamEmails = document.getElementById('pTeam').value.trim();
+    const payload = { name, description:desc, budget, deadline, teamEmails };
+    if(manager) payload.manager = manager; // Only include manager if Admin selected one
+    try{ 
+      await api.post('/pm/projects', payload); 
+      ui.closeModal('modalProject'); 
+      document.getElementById('pName').value=''; 
+      document.getElementById('pDesc').value=''; 
+      document.getElementById('pBudget').value=''; 
+      document.getElementById('pDeadline').value=''; 
+      if(managerSelect) managerSelect.value='';
+      start(); 
+    }catch(e){ alert(e.message); } finally { creating=false; }
   }
 
   async function loadPendingExpenses(){
@@ -190,7 +320,15 @@
     try{ const res = await api.get(`/pm/projects/${selected._id}/expenses`); const pend=(res.expenses||[]).filter(e=> e.status==='pending'); const body=document.querySelector('#tblPendExp tbody'); body.innerHTML=''; pend.forEach(e=>{ const tr=document.createElement('tr'); tr.innerHTML=`<td>${e.description||e.expenseName||''}</td><td>₹ ${(e.amount||0).toLocaleString()}</td><td>${e.submittedBy?.name||''}</td><td>${e.date? new Date(e.date).toISOString().slice(0,10):''}</td><td><button class='table-btn approve' data-id='${e._id}'>Approve</button><button class='table-btn reject' data-id='${e._id}'>Reject</button></td>`; body.appendChild(tr); }); body.querySelectorAll('.approve').forEach(b=> b.addEventListener('click',()=> changeExpenseStatus(b.dataset.id,'approve'))); body.querySelectorAll('.reject').forEach(b=> b.addEventListener('click',()=> changeExpenseStatus(b.dataset.id,'reject'))); ui.openModal('modalExp'); }catch(err){ alert('Failed to load expenses'); }
   }
   async function changeExpenseStatus(id,action){
-    try{ await api.post(`/pm/projects/${selected._id}/expenses/${id}/${action==='approve'?'approve':'reject'}`,{}); await loadPendingExpenses(); }catch(e){ alert('Update failed'); }
+    try{ 
+      await api.post(`/pm/projects/${selected._id}/expenses/${id}/${action==='approve'?'approve':'reject'}`,{}); 
+      await loadPendingExpenses(); 
+      // Refresh main expenses list if on expenses dashboard
+      if(typeof window.refreshExpenses === 'function') {
+        window.refreshExpenses();
+      }
+      alert(`Expense ${action === 'approve' ? 'approved' : 'rejected'} successfully`);
+    }catch(e){ alert('Update failed: ' + (e.message || 'Unknown error')); }
   }
 
   function bind(){
@@ -200,9 +338,11 @@
       document.getElementById('pDesc').value='';
       document.getElementById('pBudget').value='';
       document.getElementById('pDeadline').value='';
+      document.getElementById('pTeam').value='';
       const btn=document.getElementById('pCreateBtn');
       btn.textContent='Create';
       btn.onclick=createProject;
+      loadProjectManagers(); // Load managers when opening modal
       ui.openModal('modalProject');
     });
     document.getElementById('pCreateBtn').addEventListener('click', createProject);
@@ -228,8 +368,27 @@
 
   function openEditModal(p){
     // reuse create modal fields for edit for simplicity
+    loadProjectManagers(); // Load managers when opening edit modal
     ui.openModal('modalProject');
     document.getElementById('pName').value=p.name||'';
+    const currentUser = window.FlowIQ.auth.user();
+    const currentUserRole = currentUser?.role;
+    const managerSelect = document.getElementById('pManager');
+    
+    // Only Admins can see and change the manager
+    if(currentUserRole === 'Admin' && managerSelect && p.manager) {
+      // Wait for managers to load, then set the value
+      setTimeout(() => {
+        managerSelect.value = String(p.manager._id || p.manager);
+      }, 100);
+    } else if(currentUserRole !== 'Admin' && managerSelect) {
+      // Hide manager dropdown for non-admins
+      managerSelect.style.display = 'none';
+      const label = managerSelect.previousElementSibling;
+      if(label && label.tagName === 'LABEL') {
+        label.style.display = 'none';
+      }
+    }
     document.getElementById('pDesc').value=p.description||'';
     document.getElementById('pBudget').value=p.budget||0;
     document.getElementById('pDeadline').value=p.deadline? new Date(p.deadline).toISOString().slice(0,10):'';
@@ -237,12 +396,23 @@
     const btn=document.getElementById('pCreateBtn');
     btn.textContent='Save';
     btn.onclick=async ()=>{
+      const currentUser = window.FlowIQ.auth.user();
+      const currentUserRole = currentUser?.role;
+      const managerSelect = document.getElementById('pManager');
+      
+      // Only Admins can change the manager
+      let manager = undefined;
+      if(currentUserRole === 'Admin' && managerSelect && managerSelect.value) {
+        manager = managerSelect.value;
+      }
+      
       const payload={
         name:document.getElementById('pName').value.trim(),
         description:document.getElementById('pDesc').value.trim(),
         budget:Number(document.getElementById('pBudget').value||0),
         deadline:document.getElementById('pDeadline').value||null,
       };
+      if(manager) payload.manager = manager; // Only include manager if Admin selected one
       try{ await api.patch(`/pm/projects/${p._id}`, payload); ui.closeModal('modalProject'); btn.textContent='Create'; btn.onclick=createProject; start(); }catch(e){ alert(e.message); }
     };
   }
@@ -251,28 +421,42 @@
     try{ await api.del(`/pm/projects/${id}`); selected=null; start(); }catch(e){ alert('Delete failed: '+e.message); }
   }
 
+  let allProjects = [];
+  
   function applyProjectSearch(projects){
     const input=document.querySelector('.topbar .search input');
     if(!input) return projects;
     const term=input.value.trim().toLowerCase();
     if(!term) return projects;
     return projects.filter(p=>{
-      return [p.name, p.client, p.status].some(v=> String(v||'').toLowerCase().includes(term));
+      return [p.name, p.client, p.status, p.description].some(v=> String(v||'').toLowerCase().includes(term));
     });
   }
 
-  function hookSearch(projects){
+  function hookSearch(){
     const input=document.querySelector('.topbar .search input');
     if(!input) return;
-    input.addEventListener('input',()=>{
-      const filtered=applyProjectSearch(projects);
+    // Remove any existing listeners by cloning and replacing
+    const newInput = input.cloneNode(true);
+    input.parentNode.replaceChild(newInput, input);
+    newInput.addEventListener('input',()=>{
+      const filtered=applyProjectSearch(allProjects);
       render(filtered);
       buildProjectKanban(filtered);
     });
   }
 
   async function start(){
-    try{ const projects = await loadProjects(); hookSearch(projects); const filtered=applyProjectSearch(projects); render(filtered); buildProjectKanban(filtered); await loadKPIs(); await loadAnalytics(); startAnalyticsAutoRefresh(); }catch(e){ alert('Failed to load projects: '+e.message); }
+    try{ 
+      allProjects = await loadProjects(); 
+      hookSearch(); 
+      const filtered=applyProjectSearch(allProjects); 
+      render(filtered); 
+      buildProjectKanban(filtered); 
+      await loadKPIs(); 
+      await loadAnalytics(); 
+      startAnalyticsAutoRefresh(); 
+    }catch(e){ alert('Failed to load projects: '+e.message); }
   }
   document.addEventListener('DOMContentLoaded',()=>{ bind(); start(); });
 })();

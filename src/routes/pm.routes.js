@@ -40,6 +40,19 @@ router.use(requireAuth, requirePMOrAdmin);
 router.get('/dashboard', dashboard);
 router.get('/analytics', analyticsGet);
 
+router.get('/project-managers', async (req, res, next) => {
+  try {
+    const { User } = await import('../models/User.js');
+    // For Admin: show all active users (not just Project Managers) so they can assign any user as manager
+    // For others: show only Project Managers
+    const userRole = req.user?.role;
+    const query = userRole === 'Admin' 
+      ? { status: 'active' } 
+      : { role: 'Project Manager', status: 'active' };
+    const managers = await User.find(query).select('_id name email role').lean();
+    res.json({ success: true, managers });
+  } catch (e) { next(e); }
+});
 router.get('/projects', projectsGet);
 router.post('/projects', projectsPost);
 router.get('/projects/:projectId', requireProjectAccess, projectDetailGet);

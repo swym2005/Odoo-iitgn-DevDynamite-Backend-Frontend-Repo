@@ -31,7 +31,52 @@ export const profileGet = async (req, res, next) => {
 
 export const profileUpdate = async (req, res, next) => {
   try {
-    const payload = validate(personalInfoSchema, req.body);
+    // Handle FormData - multer processes the file, body contains text fields
+    const payload = {};
+    
+    // Process name - must be at least 2 chars if provided
+    if (req.body.name !== undefined) {
+      const trimmed = String(req.body.name || '').trim();
+      if (trimmed.length > 0) {
+        if (trimmed.length < 2) {
+          const e = new Error('Name must be at least 2 characters');
+          e.status = 400;
+          throw e;
+        }
+        payload.name = trimmed;
+      }
+    }
+    
+    // Process phone - can be empty
+    if (req.body.phone !== undefined) {
+      payload.phone = String(req.body.phone || '').trim();
+    }
+    
+    // Process location - can be empty
+    if (req.body.location !== undefined) {
+      payload.location = String(req.body.location || '').trim();
+    }
+    
+    // Check if we have any updates (including file upload)
+    if (Object.keys(payload).length === 0 && !req.file) {
+      const e = new Error('No updates provided');
+      e.status = 400;
+      throw e;
+    }
+    
+    // Validate payload if it has fields
+    if (Object.keys(payload).length > 0) {
+      // Create validation object - only validate fields that are being updated
+      const toValidate = {};
+      if (payload.name !== undefined) toValidate.name = payload.name;
+      if (payload.phone !== undefined) toValidate.phone = payload.phone;
+      if (payload.location !== undefined) toValidate.location = payload.location;
+      
+      if (Object.keys(toValidate).length > 0) {
+        validate(personalInfoSchema, toValidate);
+      }
+    }
+    
     const avatarUrl = req.file ? `/uploads/profile/${req.file.filename}` : undefined;
     const profile = await updatePersonalInfo(req.user.id, payload, avatarUrl);
     res.json({ success: true, profile });

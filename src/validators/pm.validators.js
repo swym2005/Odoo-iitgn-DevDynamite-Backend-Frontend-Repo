@@ -16,6 +16,7 @@ export const updateProjectSchema = Joi.object({
   client: Joi.string().allow('', null),
   budget: Joi.number().min(0),
   deadline: Joi.date(),
+  manager: Joi.string().hex().length(24), // Allow manager updates
   status: Joi.string().valid('planning','active','on-hold','completed','cancelled'),
   progress: Joi.number().min(0).max(100),
   revenue: Joi.number().min(0),

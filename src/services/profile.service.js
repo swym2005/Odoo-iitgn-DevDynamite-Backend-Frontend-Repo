@@ -7,9 +7,18 @@ export const getProfile = async (userId) => {
 };
 
 export const updatePersonalInfo = async (userId, updates, avatarUrl) => {
-  const payload = { ...updates };
+  // Remove undefined values to avoid overwriting with undefined
+  const payload = {};
+  Object.keys(updates).forEach(key => {
+    if (updates[key] !== undefined) {
+      payload[key] = updates[key];
+    }
+  });
   if (avatarUrl) payload.avatarUrl = avatarUrl;
-  const user = await User.findByIdAndUpdate(userId, payload, { new: true }).select('-password').lean();
+  
+  // Use $set to only update provided fields
+  const updateObj = { $set: payload };
+  const user = await User.findByIdAndUpdate(userId, updateObj, { new: true, runValidators: true }).select('-password').lean();
   if (!user) { const e = new Error('User not found'); e.status = 404; throw e; }
   return user;
 };

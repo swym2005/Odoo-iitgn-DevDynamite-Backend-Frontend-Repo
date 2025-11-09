@@ -72,7 +72,7 @@ export const createInvoiceFromSalesOrder = async (soId) => {
   const so = await SalesOrder.findById(soId).lean();
   if (!so) { const e = new Error('Sales Order not found'); e.status = 404; throw e; }
   // Default invoice mirrors SO: customer, project, amount, lineItems, and references the SO
-  const numberBase = so.number || 'SO';
+  // Per problem statement: "Generated invoice lines link back to the Project (and Sales Order if used)"
   const inv = await createCustomerInvoice({
     customer: so.customer,
     project: so.project,
@@ -83,6 +83,8 @@ export const createInvoiceFromSalesOrder = async (soId) => {
       quantity: li.quantity,
       unitPrice: li.unitPrice,
       taxRate: li.taxRate,
+      project: so.project, // Link back to Project
+      salesOrder: so._id, // Link back to Sales Order
     })) : [],
     date: new Date(),
   });
@@ -119,17 +121,48 @@ export const listCustomerInvoices = async (filters = {}) => {
   return { items, groups };
 };
 
-let invCounter = 3000;
+// Get next invoice number by finding the highest existing number
+const getNextInvoiceNumber = async () => {
+  // Find all invoices and extract the maximum number
+  const invoices = await CustomerInvoice.find({ number: { $regex: /^INV-\d+$/ } }).select('number').lean();
+  if (!invoices || invoices.length === 0) {
+    return 'INV-3001';
+  }
+  let maxNum = 3000;
+  invoices.forEach(inv => {
+    const match = inv.number?.match(/INV-(\d+)/);
+    if (match) {
+      const num = parseInt(match[1], 10);
+      if (num > maxNum) maxNum = num;
+    }
+  });
+  return `INV-${maxNum + 1}`;
+};
+
 export const createCustomerInvoice = async ({ customer, project, amount, salesOrder, date, lineItems }) => {
-  const number = `INV-${++invCounter}`;
-  return CustomerInvoice.create({ number, customer, project, amount, salesOrder: salesOrder || undefined, lineItems: Array.isArray(lineItems)? lineItems: [], status: 'Draft', date: date ? new Date(date) : new Date() });
+  const number = await getNextInvoiceNumber();
+  // Ensure lineItems have project and salesOrder links (per problem statement)
+  const processedLineItems = Array.isArray(lineItems) ? lineItems.map(li => ({
+    ...li,
+    project: li.project || project, // Link back to Project
+    salesOrder: li.salesOrder || salesOrder || undefined, // Link back to Sales Order if used
+  })) : [];
+  return CustomerInvoice.create({ number, customer, project, amount, salesOrder: salesOrder || undefined, lineItems: processedLineItems, status: 'Draft', date: date ? new Date(date) : new Date() });
 };
 
 export const setInvoicePaid = async (id) => {
   const inv = await CustomerInvoice.findById(id);
   if (!inv) { const e = new Error('Invoice not found'); e.status = 404; throw e; }
+  const wasPaid = inv.status === 'Paid';
   inv.status = 'Paid';
   await inv.save();
+  
+  // Update project revenue when invoice is marked as Paid
+  if (!wasPaid && inv.project) {
+    const { Project } = await import('../models/Project.js');
+    await Project.findByIdAndUpdate(inv.project, { $inc: { revenue: inv.amount } });
+  }
+  
   return inv;
 };
 
@@ -141,17 +174,42 @@ export const listVendorBills = async (filters = {}) => {
   return { items, groups };
 };
 
-let billCounter = 4000;
+// Get next bill number by finding the highest existing number
+const getNextBillNumber = async () => {
+  // Find all bills and extract the maximum number
+  const bills = await VendorBill.find({ number: { $regex: /^BILL-\d+$/ } }).select('number').lean();
+  if (!bills || bills.length === 0) {
+    return 'BILL-4001';
+  }
+  let maxNum = 4000;
+  bills.forEach(bill => {
+    const match = bill.number?.match(/BILL-(\d+)/);
+    if (match) {
+      const num = parseInt(match[1], 10);
+      if (num > maxNum) maxNum = num;
+    }
+  });
+  return `BILL-${maxNum + 1}`;
+};
+
 export const createVendorBill = async ({ vendor, project, amount, purchaseOrder, date, lineItems }, attachmentUrl) => {
-  const number = `BILL-${++billCounter}`;
+  const number = await getNextBillNumber();
   return VendorBill.create({ number, vendor, project, amount, purchaseOrder: purchaseOrder || undefined, lineItems: Array.isArray(lineItems)? lineItems: [], status: 'Pending', date: date ? new Date(date) : new Date(), attachmentUrl });
 };
 
 export const setVendorBillPaid = async (id) => {
   const bill = await VendorBill.findById(id);
   if (!bill) { const e = new Error('Vendor Bill not found'); e.status = 404; throw e; }
+  const wasPaid = bill.status === 'Paid';
   bill.status = 'Paid';
   await bill.save();
+  
+  // Update project cost when vendor bill is marked as Paid
+  if (!wasPaid && bill.project) {
+    const { Project } = await import('../models/Project.js');
+    await Project.findByIdAndUpdate(bill.project, { $inc: { cost: bill.amount } });
+  }
+  
   return bill;
 };
 

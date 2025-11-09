@@ -72,10 +72,10 @@ export const listProjects = async (user, { status, from, to } = {}) => {
     if (from) query.deadline.$gte = new Date(from);
     if (to) query.deadline.$lte = new Date(to);
   }
-  const projects = await Project.find(query).lean();
+  const projects = await Project.find(query).populate('manager', 'name email').lean();
   // Fallback: if none found and user is PM, attempt legacy manager-only filter (in case $or index mismatch temporarily)
   if (!projects.length && !isAdmin(user)) {
-    const legacy = await Project.find({ manager: new mongoose.Types.ObjectId(user.id) }).lean();
+    const legacy = await Project.find({ manager: new mongoose.Types.ObjectId(user.id) }).populate('manager', 'name email').lean();
     return legacy;
   }
   return projects;
@@ -108,14 +108,14 @@ export const getProjectDetail = async (user, projectId) => {
     throw e;
   }
 
-  const [tasksCount, tasksDone, revenueAgg, expenseAgg] = await Promise.all([
+  const [tasksCount, tasksDone] = await Promise.all([
     Task.countDocuments({ project: project._id }),
     Task.countDocuments({ project: project._id, status: 'done' }),
-    BillingRecord.aggregate([{ $match: { project: project._id, type: 'revenue' } }, { $group: { _id: null, total: { $sum: '$amount' } } }]),
-    BillingRecord.aggregate([{ $match: { project: project._id, type: 'expense' } }, { $group: { _id: null, total: { $sum: '$amount' } } }]),
   ]);
-  const revenue = revenueAgg[0]?.total || 0;
-  const cost = expenseAgg[0]?.total || 0;
+  // Use project's stored revenue/cost fields (updated when invoices/bills/expenses are paid/approved)
+  // Fallback to BillingRecord aggregation for backward compatibility
+  const revenue = project.revenue || 0;
+  const cost = project.cost || 0;
   const profit = revenue - cost;
   const progress = tasksCount ? Math.round((tasksDone / tasksCount) * 100) : project.progress || 0;
 
@@ -167,9 +167,12 @@ export const logTimesheet = async (payload, user) => {
     const { User } = await import('../models/User.js');
     const u = await User.findById(ts.user).select('hourlyRate').lean();
     const rate = Number(u?.hourlyRate || 0);
-    if(rate > 0){
+    if(rate > 0 && ts.project){
       const cost = Number(ts.hours || 0) * rate;
       await BillingRecord.create({ type: 'expense', amount: cost, project: ts.project, date: ts.date, notes: 'Timesheet cost' });
+      // Update project cost when timesheet is logged (per problem statement: "Each timesheet is an expense on the company")
+      const { Project } = await import('../models/Project.js');
+      await Project.findByIdAndUpdate(ts.project, { $inc: { cost: cost } });
     }
   }catch{}
   return ts;
@@ -178,9 +181,26 @@ export const logTimesheet = async (payload, user) => {
 export const hoursPerMember = async (projectId) => {
   const agg = await Timesheet.aggregate([
     { $match: { project: new mongoose.Types.ObjectId(projectId) } },
-    { $group: { _id: '$user', hours: { $sum: '$hours' } } },
+    { $group: { _id: '$user', hours: { $sum: '$hours' }, billableHours: { $sum: { $cond: [{ $eq: ['$billable', true] }, '$hours', 0] } }, nonBillableHours: { $sum: { $cond: [{ $eq: ['$billable', false] }, '$hours', 0] } } } },
+    { $sort: { hours: -1 } },
   ]);
-  return agg;
+  // Populate user names
+  const userIds = agg.map(u => u._id).filter(Boolean);
+  let users = [];
+  if (userIds.length) {
+    const { User } = await import('../models/User.js');
+    users = await User.find({ _id: { $in: userIds } }).select('name email role').lean();
+  }
+  const userMap = new Map(users.map(u => [String(u._id), u]));
+  return agg.map(u => ({
+    userId: u._id,
+    name: userMap.get(String(u._id))?.name || 'Unknown',
+    email: userMap.get(String(u._id))?.email || '',
+    role: userMap.get(String(u._id))?.role || '',
+    hours: u.hours || 0,
+    billableHours: u.billableHours || 0,
+    nonBillableHours: u.nonBillableHours || 0,
+  }));
 };
 
 export const listExpenses = (projectId) => {
@@ -289,9 +309,16 @@ export const getKanban = async (projectId, { q, assignee, priority } = {}) => {
   if (assignee) base.assignee = assignee;
   if (priority) base.priority = priority;
   if (q) base.title = { $regex: q, $options: 'i' };
-  const tasks = await Task.find(base).populate('assignee', 'name email').sort({ status: 1, order: 1, createdAt: 1 }).lean();
+  const tasks = await Task.find(base).populate('assignee', 'name email').populate('project', 'name').sort({ status: 1, order: 1, createdAt: 1 }).lean();
   const columns = { todo: [], 'in-progress': [], blocked: [], review: [], done: [] };
-  for (const t of tasks) columns[t.status]?.push(t);
+  for (const t of tasks) {
+    if (columns[t.status]) {
+      columns[t.status].push(t);
+    } else {
+      // If status doesn't match any column, default to todo
+      columns.todo.push(t);
+    }
+  }
   return columns;
 };
 

@@ -34,16 +34,65 @@
       'Blocked': columns.blocked || [],
       'Done': columns.done || []
     };
-    ['New','In Progress','Blocked','Done'].forEach(c=>{ el('col-'+c).innerHTML=''; });
+    ['New','In Progress','Blocked','Done'].forEach(c=>{ 
+      const colEl = el('col-'+c);
+      if(colEl) colEl.innerHTML=''; 
+    });
+    
+    let totalTasks = 0;
     Object.entries(colMap).forEach(([col,tasks])=>{
+      totalTasks += tasks.length;
       tasks.forEach(t=>{
-        const d=document.createElement('div'); d.className='task'; d.setAttribute('draggable','true'); d.dataset.id=t._id; d.dataset.status=t.status;
-        d.innerHTML=`<div>${t.title}</div><div class="small">${t.assignee?.name||'Unassigned'} • ${t.dueDate? new Date(t.dueDate).toISOString().slice(0,10):''} • <span class="priority-${(t.priority||'').charAt(0).toUpperCase()+ (t.priority||'').slice(1)}">${(t.priority||'').charAt(0).toUpperCase()+ (t.priority||'').slice(1)}</span></div>`;
+        const d=document.createElement('div'); 
+        d.className='task'; 
+        d.setAttribute('draggable','true'); 
+        d.dataset.id=t._id; 
+        d.dataset.status=t.status;
+        
+        // Enhanced task card with more information
+        const projectName = t.project?.name || '';
+        const assigneeName = t.assignee?.name || 'Unassigned';
+        const dueDate = t.dueDate ? new Date(t.dueDate).toISOString().slice(0,10) : '';
+        const priority = (t.priority || 'medium').charAt(0).toUpperCase() + (t.priority || 'medium').slice(1);
+        const description = t.description ? (t.description.length > 50 ? t.description.substring(0, 50) + '...' : t.description) : '';
+        
+        d.innerHTML = `
+          <div style="font-weight:600;margin-bottom:.2rem">${escapeHtml(t.title || 'Untitled Task')}</div>
+          ${projectName ? `<div class="small" style="opacity:.7;margin-bottom:.2rem">${escapeHtml(projectName)}</div>` : ''}
+          ${description ? `<div class="small" style="opacity:.6;margin-bottom:.2rem;font-size:.6rem">${escapeHtml(description)}</div>` : ''}
+          <div class="small" style="display:flex;gap:.4rem;flex-wrap:wrap;align-items:center">
+            <span>${escapeHtml(assigneeName)}</span>
+            ${dueDate ? `<span>• ${dueDate}</span>` : ''}
+            <span class="priority-${priority}" style="margin-left:auto">${priority}</span>
+          </div>
+        `;
+        
         d.addEventListener('click',()=> openTaskModal(t));
         bindDrag(d);
-        el('col-'+col).appendChild(d);
-      })
+        const colEl = el('col-'+col);
+        if(colEl) colEl.appendChild(d);
+      });
+      
+      // Show empty state if no tasks in column
+      const colEl = el('col-'+col);
+      if(colEl && tasks.length === 0) {
+        const emptyMsg = document.createElement('div');
+        emptyMsg.className = 'small';
+        emptyMsg.style.cssText = 'opacity:.4;padding:.5rem;text-align:center;font-style:italic';
+        emptyMsg.textContent = 'No tasks';
+        colEl.appendChild(emptyMsg);
+      }
     });
+    
+    // Log for debugging
+    if(totalTasks === 0) {
+      console.warn('No tasks found for project:', projectId);
+    }
+  }
+  
+  function escapeHtml(str) {
+    if(!str) return '';
+    return String(str).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
   }
 
   async function loadKanban(){
@@ -69,10 +118,25 @@
   }
   function bindCols(){
     document.querySelectorAll('.column .tasks').forEach(area=>{
-      if(role!=='Team Member'){
-        area.addEventListener('dragover',e=>{ e.preventDefault(); });
-        area.addEventListener('drop',async e=>{ e.preventDefault(); const id=e.dataTransfer.getData('text/plain'); const fromStatus=e.dataTransfer.getData('status'); const toCol=area.id.replace('col-',''); const toStatus = Object.keys(map).find(k=> map[k]===toCol) || 'todo'; const index = area.querySelectorAll('.task').length; try{ await api.post(`/pm/projects/${projectId}/kanban/reorder`, { taskId:id, from:{ status:fromStatus, index:0 }, to:{ status: toStatus, index } }); start(); }catch(err){ alert('Reorder failed'); } });
-      }
+      // Enable drag-and-drop for all roles (including Team Members)
+      area.addEventListener('dragover',e=>{ e.preventDefault(); });
+      area.addEventListener('drop',async e=>{ 
+        e.preventDefault(); 
+        const id=e.dataTransfer.getData('text/plain'); 
+        const fromStatus=e.dataTransfer.getData('status'); 
+        const toCol=area.id.replace('col-',''); 
+        const toStatus = Object.keys(map).find(k=> map[k]===toCol) || 'todo'; 
+        const index = area.querySelectorAll('.task').length; 
+        try{ 
+          // Use appropriate endpoint based on role
+          if(role==='Team Member'){
+            await api.patch(`/team/projects/${projectId}/tasks/${id}`, { status: toStatus }); 
+          } else {
+            await api.post(`/pm/projects/${projectId}/kanban/reorder`, { taskId:id, from:{ status:fromStatus, index:0 }, to:{ status: toStatus, index } }); 
+          }
+          start(); 
+        }catch(err){ alert('Failed to update task status: ' + (err.message || 'Unknown error')); } 
+      });
     });
   }
 
@@ -98,21 +162,43 @@
   async function createTask(){
     const title=document.getElementById('tTitle').value.trim(); if(!title) return alert('Title required');
     const due=document.getElementById('tDue').value||null; const priority=(document.getElementById('tPriority').value||'low').toLowerCase();
+    const status = document.getElementById('tStatus')?.value || 'todo';
     try{
       const desc = document.getElementById('tDesc').value.trim();
       if(role==='Team Member'){
-        await api.post(`/team/projects/${projectId}/tasks`, { title, description: desc, dueDate: due, priority });
+        await api.post(`/team/projects/${projectId}/tasks`, { title, description: desc, dueDate: due, priority, status });
       } else {
         const assignee=document.getElementById('tAssignee').value||null;
-        await api.post(`/pm/projects/${projectId}/tasks`, { title, description: desc, assignee, dueDate: due, priority });
+        await api.post(`/pm/projects/${projectId}/tasks`, { title, description: desc, assignee, dueDate: due, priority, status });
       }
       ui.closeModal('modalTask'); start();
     }catch(e){ alert(e.message); }
   }
 
   async function start(){
-    if(!projectId){ await fetchProjects(); }
-    const columns = await loadKanban(); renderColumns(columns); bindCols(); if(projectId) await loadProjectAndMembers();
+    if(!projectId){ 
+      await fetchProjects(); 
+      if(!projectId && allProjects.length > 0) {
+        projectId = allProjects[0]._id;
+        updateUrlProject(projectId);
+      }
+    }
+    if(!projectId) {
+      console.warn('No project selected');
+      // Show message to user
+      ['New','In Progress','Blocked','Done'].forEach(c=>{ 
+        const colEl = el('col-'+c);
+        if(colEl) {
+          colEl.innerHTML = '<div class="small" style="opacity:.4;padding:.5rem;text-align:center;font-style:italic">Select a project to view tasks</div>';
+        }
+      });
+      return;
+    }
+    const columns = await loadKanban(); 
+    console.log('Loaded columns:', columns);
+    renderColumns(columns); 
+    bindCols(); 
+    if(projectId) await loadProjectAndMembers();
   }
   function openTaskModal(task){
     // Populate fields
@@ -123,6 +209,11 @@
       document.getElementById('tDesc').value = task.description || '';
       document.getElementById('tDue').value = task.dueDate ? new Date(task.dueDate).toISOString().slice(0,10) : '';
       document.getElementById('tPriority').value = (task.priority||'medium').charAt(0).toUpperCase()+ (task.priority||'medium').slice(1);
+      // Set status field
+      const statusField = document.getElementById('tStatus');
+      if(statusField) {
+        statusField.value = task.status || 'todo';
+      }
       const saveBtn = document.getElementById('tSave');
       const createBtn = document.getElementById('tCreate');
       createBtn.style.display='none';
@@ -158,8 +249,14 @@
             description: document.getElementById('tDesc').value.trim(),
             dueDate: document.getElementById('tDue').value || null,
             priority: (document.getElementById('tPriority').value||'medium').toLowerCase(),
+            status: document.getElementById('tStatus')?.value || task.status || 'todo',
           };
-          await api.patch(`/pm/projects/${projectId}/tasks/${task._id}`, payload);
+          // Use appropriate endpoint based on role
+          if(role==='Team Member'){
+            await api.patch(`/team/projects/${projectId}/tasks/${task._id}`, payload);
+          } else {
+            await api.patch(`/pm/projects/${projectId}/tasks/${task._id}`, payload);
+          }
           ui.closeModal('modalTask'); start();
         }catch(e){ alert(e.message); }
       };
@@ -170,6 +267,10 @@
       document.getElementById('tDesc').value='';
       document.getElementById('tDue').value='';
       document.getElementById('tPriority').value='Medium';
+      const statusField = document.getElementById('tStatus');
+      if(statusField) {
+        statusField.value = 'todo';
+      }
       document.getElementById('tCreate').style.display='inline-block';
       document.getElementById('tSave').style.display='none';
       clearTaskExtras(); currentTaskId = null;

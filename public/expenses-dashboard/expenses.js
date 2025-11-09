@@ -33,12 +33,40 @@
 
   function render(){
     const term = (document.getElementById('searchBox').value||'').toLowerCase();
+    const currentUser = window.FlowIQ?.auth?.user();
+    const userRole = currentUser?.role || '';
+    const canApprove = userRole === 'Admin' || userRole === 'Project Manager';
     tblBody().innerHTML='';
     expenses.filter(e=> !term || (e.expenseName||'').toLowerCase().includes(term)).forEach(e=>{
       const tr=document.createElement('tr');
-      tr.innerHTML=`<td>${e.expenseName}</td><td>₹ ${(e.amount||0).toLocaleString()}</td><td>${e.project?.name||''}</td><td>${e.submittedBy?.name||''}</td><td>${e.status}</td><td>${e.billable?'Yes':'No'}</td><td>${e.date? new Date(e.date).toISOString().slice(0,10):''}</td>`;
+      const statusCell = `<td><span class="status-chip status-${e.status}">${e.status}</span></td>`;
+      const actionsCell = canApprove && e.status === 'pending' 
+        ? `<td><button class="table-btn approve-btn" data-id="${e._id}">Approve</button><button class="table-btn reject-btn" style="color:#ef4444;margin-left:.4rem" data-id="${e._id}">Reject</button></td>`
+        : '<td>—</td>';
+      tr.innerHTML=`<td>${e.expenseName}</td><td>₹ ${(e.amount||0).toLocaleString()}</td><td>${e.project?.name||''}</td><td>${e.submittedBy?.name||''}</td>${statusCell}<td>${e.billable?'Yes':'No'}</td><td>${e.date? new Date(e.date).toISOString().slice(0,10):''}</td>${actionsCell}`;
       tblBody().appendChild(tr);
     });
+    // Bind approve/reject buttons
+    if(canApprove){
+      tblBody().querySelectorAll('.approve-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          try{
+            await api.post(`/expenses/${btn.dataset.id}/approve`, {});
+            await refreshAll();
+            alert('Expense approved');
+          }catch(e){ alert('Failed to approve: ' + (e.message || 'Unknown error')); }
+        });
+      });
+      tblBody().querySelectorAll('.reject-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          try{
+            await api.post(`/expenses/${btn.dataset.id}/reject`, {});
+            await refreshAll();
+            alert('Expense rejected');
+          }catch(e){ alert('Failed to reject: ' + (e.message || 'Unknown error')); }
+        });
+      });
+    }
     // by project
     tblProjBody().innerHTML='';
     byProject.forEach(r=>{
@@ -78,6 +106,9 @@
       render();
     } finally { ui.hideLoader(contentArea); }
   }
+  
+  // Expose refresh function globally so PM dashboard can trigger it
+  window.refreshExpenses = refreshAll;
 
   function bind(){
     document.getElementById('btnSubmit').addEventListener('click',()=> ui.openModal('modalExpense'));

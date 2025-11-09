@@ -13,19 +13,55 @@
   .hero::before{ content:""; position:absolute; inset:-200px; background: radial-gradient(600px 300px at 15% 20%, #4f9fff22, transparent 60%), radial-gradient(700px 320px at 85% 10%, #8b5cf622, transparent 60%); filter: blur(20px); pointer-events:none; animation: floatBg 18s ease-in-out infinite; }
   @keyframes floatBg { 0%{ transform: translateY(0) rotate(0deg) scale(1);} 50%{ transform: translateY(12px) rotate(2deg) scale(1.03);} 100%{ transform: translateY(0) rotate(0deg) scale(1);} }
     .container{ max-width:1100px; margin:0 auto; padding:0 16px; }
-    .nav{ display:flex; align-items:center; justify-content:space-between; padding:16px 0; }
-  .brand{ display:flex; align-items:center; gap:.6rem; font-weight:800; letter-spacing:.5px; font-size:1.15rem; }
+    .nav{ display:flex; align-items:center; justify-content:space-between; padding:20px 0; }
+  .brand{ display:flex; align-items:center; gap:.8rem; font-weight:800; letter-spacing:1px; font-size:1.5rem; background:linear-gradient(135deg, #4f9fff, #8b5cf6); -webkit-background-clip:text; background-clip:text; color:transparent; }
   .dot{ width:18px; height:18px; border-radius:50%; position:relative; background:radial-gradient(circle at 40% 40%, #8b5cf6, transparent 60%); box-shadow:0 0 12px #8b5cf6, 0 0 26px #4f9fff66; }
   .dot::after{ content:""; position:absolute; inset:-4px; border:2px dashed #7ea6ff66; border-radius:50%; animation:orbit 8s linear infinite; }
   @keyframes orbit{ to { transform: rotate(360deg); } }
-    .nav a{ color:var(--text); text-decoration:none; opacity:.9; margin-left:16px; font-size:.9rem; }
-    .btn{ border:0; border-radius:12px; padding:.7rem 1rem; cursor:pointer; font-weight:600; }
+    .nav a{ color:var(--text); text-decoration:none; opacity:.9; margin-left:16px; font-size:.9rem; transition:opacity .2s; }
+    .nav a:hover{ opacity:1; }
+    .btn{ border:0; border-radius:12px; padding:.7rem 1rem; cursor:pointer; font-weight:600; transition:transform .2s, box-shadow .2s; }
+    .btn:hover{ transform:translateY(-2px); box-shadow:0 4px 12px rgba(79,159,255,.3); }
     .btn-primary{ background:var(--grad); color:#08121f; }
     .btn-ghost{ background:transparent; border:1px solid var(--border); color:var(--text); }
     .h1{ font-size: clamp(1.8rem, 4vw, 3rem); line-height:1.1; margin:.4rem auto; max-width:900px; }
     .sub{ color:var(--muted); max-width:780px; margin:.8rem auto 1.2rem; font-size:1rem; }
     .cta{ display:flex; gap:.8rem; justify-content:center; flex-wrap:wrap; }
   .features{ padding:48px 0 28px; }
+  
+  /* Animated background elements */
+  .hero::after{ 
+    content:""; 
+    position:absolute; 
+    inset:0; 
+    background-image: 
+      radial-gradient(circle at 20% 50%, rgba(79,159,255,.15) 0%, transparent 50%),
+      radial-gradient(circle at 80% 80%, rgba(139,92,246,.15) 0%, transparent 50%),
+      radial-gradient(circle at 40% 20%, rgba(79,159,255,.1) 0%, transparent 50%);
+    animation: pulseBg 20s ease-in-out infinite;
+    pointer-events:none;
+  }
+  @keyframes pulseBg {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.8; transform: scale(1.1); }
+  }
+  
+  /* Floating particles */
+  .particle{
+    position:absolute;
+    width:4px;
+    height:4px;
+    background:rgba(79,159,255,.6);
+    border-radius:50%;
+    animation:float 15s infinite;
+    pointer-events:none;
+  }
+  @keyframes float{
+    0%{ transform:translateY(0) translateX(0); opacity:0; }
+    10%{ opacity:1; }
+    90%{ opacity:1; }
+    100%{ transform:translateY(-100vh) translateX(50px); opacity:0; }
+  }
   .grid{ display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:1.1rem; }
   .card{ background:var(--card); border:1px solid var(--border); border-radius:16px; padding:1.05rem; display:grid; gap:.4rem; transition:transform .2s ease, box-shadow .2s ease, border-color .2s ease; }
   .card:hover{ transform: translateY(-2px); border-color:#3a4e72; box-shadow:0 12px 30px -10px #000a, 0 0 0 1px #ffffff0d inset; }
@@ -44,37 +80,49 @@
   <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
  </head>
 <body>
-  <div class="container">
+    <div class="container">
     <div class="nav">
-  <div class="brand">OrbitOne</div>
+      <div class="brand" style="font-size:1.5rem">OrbitOne</div>
       <div>
         <a href="#features">Features</a>
-  <a href="/analytics-dashboard/">Analytics</a>
-  <a href="/docs/">Docs</a>
-  <a href="/login" class="btn btn-ghost" style="margin-left:12px">Login</a>
-  <a href="/signup" class="btn btn-primary">Get Started</a>
+        <a href="/login" class="btn btn-ghost" style="margin-left:12px">Login</a>
+        <a href="/signup" class="btn btn-primary">Get Started</a>
       </div>
     </div>
   </div>
 
   <header class="hero">
-    <div class="container">
-  <div class="h1">Smarter Project Management</div>
-      <p class="sub">Unified dashboards for Admins, Project Managers, Team Members and Finance. Plan, execute, track timesheets, expenses and billing with real-time analytics.</p>
-      <div class="cta">
-  <a href="/signup" class="btn btn-primary">Get Started</a>
-  <a href="#features" class="btn btn-ghost">See Features</a>
+    <div class="container" style="position:relative;z-index:1">
+      <div style="margin-bottom:2rem">
+        <div class="brand" style="font-size:clamp(2.5rem, 6vw, 4.5rem);margin-bottom:1rem;display:inline-flex;align-items:center;gap:1rem">
+          <div class="dot" style="width:48px;height:48px;box-shadow:0 0 20px #8b5cf6, 0 0 40px #4f9fff66;"></div>
+          OrbitOne
+        </div>
       </div>
-      <div style="height:28px"></div>
-      <div class="logos">
-        <div class="logo">JWT Auth</div>
-        <div class="logo">MongoDB</div>
-        <div class="logo">Chart.js</div>
-        <div class="logo">Express</div>
-        <div class="logo">Node</div>
+      <div class="h1" style="font-size:clamp(2rem, 5vw, 3.5rem);font-weight:700;margin-bottom:1.2rem">Plan to Bill in One Place</div>
+      <p class="sub" style="font-size:1.1rem;max-width:900px">Complete project management from planning to execution to billing. Manage projects, tasks, timesheets, expenses, and financial documents all in one unified platform.</p>
+      <div class="cta" style="margin-top:2rem">
+        <a href="/signup" class="btn btn-primary" style="padding:.9rem 2rem;font-size:1.1rem">Get Started</a>
+        <a href="/login" class="btn btn-ghost" style="padding:.9rem 2rem;font-size:1.1rem">Login</a>
       </div>
     </div>
+    <div id="particles"></div>
   </header>
+  <script>
+    // Create floating particles
+    (function(){
+      const particlesContainer = document.getElementById('particles');
+      if(!particlesContainer) return;
+      for(let i=0; i<20; i++){
+        const p = document.createElement('div');
+        p.className = 'particle';
+        p.style.left = Math.random() * 100 + '%';
+        p.style.animationDelay = Math.random() * 15 + 's';
+        p.style.animationDuration = (10 + Math.random() * 10) + 's';
+        particlesContainer.appendChild(p);
+      }
+    })();
+  </script>
 
   <main class="container">
     <section id="features" class="features">
@@ -93,24 +141,12 @@
   <footer>
     <div class="container footer-grid">
       <div>
-  <div class="brand" style="margin-bottom:.4rem">OrbitOne</div>
-        <div class="muted">Run projects with clarity. Manage tasks, time, and spend in one place.</div>
+        <div class="brand" style="margin-bottom:.4rem;font-size:1.2rem">OrbitOne</div>
+        <div class="muted">Complete project management from planning to billing.</div>
       </div>
       <div>
-        <div style="font-weight:600;margin-bottom:.4rem">Product</div>
-        <div><a class="link" href="#features">Features</a></div>
-        <div><a class="link" href="/analytics-dashboard/">Analytics</a></div>
-        <div><a class="link" href="/pm-dashboard/">Projects</a></div>
-      </div>
-      <div>
-        <div style="font-weight:600;margin-bottom:.4rem">Company</div>
-  <div><a class="link" href="/settings-dashboard/">Settings</a></div>
-  <div><a class="link" href="/profile/">Profile</a></div>
-      </div>
-      <div>
-        <div style="font-weight:600;margin-bottom:.4rem">Resources</div>
-        <div><a class="link" href="/docs/">Docs</a></div>
-        <div><a class="link" href="#" onclick="event.preventDefault();alert('API coming soon')">API</a></div>
+        <div style="font-weight:600;margin-bottom:.4rem">Features</div>
+        <div><a class="link" href="#features">Overview</a></div>
       </div>
     </div>
     <div class="container footer-note">© <span id="yr"></span> OrbitOne. All rights reserved.</div>

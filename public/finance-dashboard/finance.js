@@ -128,14 +128,15 @@
         kRev.textContent = formatCurrency(res.revenue);
         kExp.textContent = formatCurrency(res.totalCost);
         kProfit.textContent = formatCurrency(res.grossProfit);
-        const margin = res.revenue ? (res.grossProfit / res.revenue * 100) : 0;
+        // Cap margin at -100% to 100% for clarity
+        const margin = res.revenue ? Math.max(-100, Math.min(100, (res.grossProfit / res.revenue * 100))) : 0;
         kMargin.textContent = margin.toFixed(1)+'%';
       }
     } catch(e){ console.error('dashboard error', e); }
     finally { UI.hideLoader(loaderArea); }
   }
 
-  function formatCurrency(v){ if(v==null) return '—'; return '$'+Number(v).toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2}); }
+  function formatCurrency(v){ if(v==null) return '—'; return '₹ '+Number(v).toLocaleString(undefined,{minimumFractionDigits:0, maximumFractionDigits:0}); }
 
   async function loadInvoices(){ await loadList('/finance/invoices', tblInvoices, 'invoices'); }
   async function loadBills(){ await loadList('/finance/vendor-bills', tblBills, 'vendor-bills'); }

@@ -17,6 +17,7 @@
 				<a class="nav-item" href="/tasks/" data-roles="Project Manager,Admin"><span>Tasks</span></a>
 				<a class="nav-item" href="/timesheets-ui/" data-roles="Project Manager,Admin,Team Member"><span>Timesheets</span></a>
 				<a class="nav-item" href="/expenses-dashboard/" data-roles="Project Manager,Admin,Finance"><span>Expenses</span></a>
+			<a class="nav-item" href="/settings-dashboard/" data-roles="Project Manager,Admin,Finance"><span>Settings</span></a>
 			</nav>
 			<div class="footer">Logged in as PM</div>
 		</aside>
@@ -82,6 +83,7 @@
 				<label>Project Name</label><input id="pName" />
 				<label>Description</label><textarea id="pDesc"></textarea>
 				<div class="flex"><div style="flex:1"><label>Budget</label><input id="pBudget" type="number" /></div><div style="flex:1"><label>Deadline</label><input id="pDeadline" type="date" /></div></div>
+				<label>Project Manager</label><select id="pManager" class="button-outline" style="padding:.55rem .7rem"><option value="">Loading...</option></select>
 				<label>Assign Team</label><input id="pTeam" placeholder="Comma separated emails (optional)" />
 				<label>Sales Order Link (optional)</label><input id="pSOLink" placeholder="https://..." />
 			</div>

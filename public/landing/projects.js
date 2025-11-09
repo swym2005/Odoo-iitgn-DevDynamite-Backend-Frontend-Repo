@@ -9,7 +9,9 @@ import '/assets/css/cards.css';
   function escapeHtml(str){ return String(str||'').replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[s])); }
 
   function projectCard(p){
-    const profitPct = p.revenue? (((p.revenue||0)-(p.cost||0))/(p.revenue||1)*100).toFixed(1):'--';
+    // Calculate profit percentage, capped at -100% for clarity (loss cannot exceed 100% of revenue)
+    const profit = (p.revenue||0) - (p.cost||0);
+    const profitPct = (p.revenue && p.revenue > 0) ? Math.max(-100, Math.min(100, (profit / p.revenue) * 100)).toFixed(1) : '--';
     const progress = p.progress!=null? p.progress : 0;
     const budget = Number(p.budget||0);
     const cost = Number(p.cost||0);
